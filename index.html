@@ -1,0 +1,2246 @@
+<!DOCTYPE html>
+<html lang="it" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BashMaster — Impara e allenati con Linux Bash</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darker: '#090d16',
+                        dark: '#0f172a',
+                        card: '#1e293b',
+                        terminal: '#05070b'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+                        code: ['"Fira Code"', 'ui-monospace', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', ui-sans-serif, system-ui; }
+        .font-code { font-family: 'Fira Code', ui-monospace, monospace; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .tok-cmt { color: #64748b; font-style: italic; }
+        .tok-str { color: #fbbf24; }
+        .tok-kw  { color: #f472b6; }
+        .tok-var { color: #34d399; }
+        .tok-cmd { color: #60a5fa; }
+        .fade-in { animation: fade .18s ease-out; }
+        @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    </style>
+</head>
+<body class="bg-darker text-slate-100 min-h-screen flex flex-col selection:bg-emerald-500 selection:text-black">
+
+    <!-- ============================= HEADER ============================= -->
+    <header class="bg-dark border-b border-slate-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                    <i class="fa-solid fa-terminal text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-tight text-white flex items-center gap-2">
+                        BashMaster <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">v2</span>
+                    </h1>
+                    <p class="text-xs text-slate-400 hidden sm:block">Teoria · Palestra · Quiz · Script · Esercizi · Materiale</p>
+                </div>
+            </div>
+
+            <nav class="hidden lg:flex space-x-1 bg-slate-900 p-1.5 rounded-xl border border-slate-800">
+                <button onclick="switchTab('theory')" id="nav-theory" class="px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 bg-emerald-500 text-black shadow-lg shadow-emerald-500/20">
+                    <i class="fa-solid fa-book-open"></i> Teoria
+                </button>
+                <button onclick="switchTab('arena')" id="nav-arena" class="px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800">
+                    <i class="fa-solid fa-code"></i> Palestra
+                </button>
+                <button onclick="switchTab('quiz')" id="nav-quiz" class="px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800">
+                    <i class="fa-solid fa-circle-question"></i> Quiz
+                </button>
+                <button onclick="switchTab('generator')" id="nav-generator" class="px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Script
+                </button>
+                <button onclick="switchTab('exercises')" id="nav-exercises" class="px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800">
+                    <i class="fa-solid fa-dumbbell"></i> Esercizi
+                </button>
+                <button onclick="switchTab('material')" id="nav-material" class="px-3 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800">
+                    <i class="fa-solid fa-book-bookmark"></i> Materiale
+                </button>
+            </nav>
+
+            <div class="flex items-center space-x-2">
+                <div class="hidden sm:flex items-center gap-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl text-xs">
+                    <span title="Sfide completate"><i class="fa-solid fa-fire text-amber-400"></i> <strong id="completed-count" class="text-emerald-400">0</strong></span>
+                    <span class="text-slate-700">|</span>
+                    <span title="Punteggio totale"><i class="fa-solid fa-star text-yellow-400"></i> <strong id="score-count" class="text-yellow-300">0</strong></span>
+                </div>
+                <button onclick="resetProgress()" title="Azzera i progressi salvati" class="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-rose-400 hover:border-rose-500/40 transition-all">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </button>
+            </div>
+        </div>
+        <div class="flex lg:hidden bg-slate-900 border-t border-slate-800 px-1 py-1.5 justify-around">
+            <button onclick="switchTab('theory')" id="mob-nav-theory" class="p-1.5 rounded-lg text-[10px] font-medium flex flex-col items-center text-emerald-400">
+                <i class="fa-solid fa-book-open text-base mb-0.5"></i> Teoria
+            </button>
+            <button onclick="switchTab('arena')" id="mob-nav-arena" class="p-1.5 rounded-lg text-[10px] font-medium flex flex-col items-center text-slate-400">
+                <i class="fa-solid fa-code text-base mb-0.5"></i> Palestra
+            </button>
+            <button onclick="switchTab('quiz')" id="mob-nav-quiz" class="p-1.5 rounded-lg text-[10px] font-medium flex flex-col items-center text-slate-400">
+                <i class="fa-solid fa-circle-question text-base mb-0.5"></i> Quiz
+            </button>
+            <button onclick="switchTab('generator')" id="mob-nav-generator" class="p-1.5 rounded-lg text-[10px] font-medium flex flex-col items-center text-slate-400">
+                <i class="fa-solid fa-wand-magic-sparkles text-base mb-0.5"></i> Script
+            </button>
+            <button onclick="switchTab('exercises')" id="mob-nav-exercises" class="p-1.5 rounded-lg text-[10px] font-medium flex flex-col items-center text-slate-400">
+                <i class="fa-solid fa-dumbbell text-base mb-0.5"></i> Esercizi
+            </button>
+            <button onclick="switchTab('material')" id="mob-nav-material" class="p-1.5 rounded-lg text-[10px] font-medium flex flex-col items-center text-slate-400">
+                <i class="fa-solid fa-book-bookmark text-base mb-0.5"></i> Appunti
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- ===================== 1. THEORY ===================== -->
+        <section id="tab-theory" class="space-y-8 fade-in">
+            <div class="bg-gradient-to-r from-emerald-900/20 via-slate-900 to-slate-900 border border-emerald-500/20 p-6 rounded-2xl">
+                <h2 class="text-2xl font-bold text-white mb-2 flex items-center gap-3">
+                    <i class="fa-solid fa-graduation-cap text-emerald-400"></i> Appunti e Fondamenti di Bash
+                </h2>
+                <p class="text-slate-400 text-sm max-w-3xl">
+                    Concetti chiave su shell, terminale, comandi di orientamento, navigazione e anatomia del comando.
+                    Usa la <strong class="text-emerald-300">Palestra</strong> per metterli in pratica in un terminale simulato.
+                </p>
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <button onclick="filterTheory('all')" data-tfilter="all" class="tfilter px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500 text-black">Tutti</button>
+                    <button onclick="filterTheory('basi')" data-tfilter="basi" class="tfilter px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:bg-slate-700">Basi</button>
+                    <button onclick="filterTheory('navigazione')" data-tfilter="navigazione" class="tfilter px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:bg-slate-700">Navigazione</button>
+                    <button onclick="filterTheory('sistema')" data-tfilter="sistema" class="tfilter px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:bg-slate-700">Sistema</button>
+                    <button onclick="filterTheory('material')" data-tfilter="material" class="tfilter px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:bg-slate-700">Miei appunti <span id="material-count-badge" class="ml-1 text-emerald-400">0</span></button>
+                </div>
+            </div>
+            <div id="theory-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </section>
+
+        <!-- ===================== 2. ARENA ===================== -->
+        <section id="tab-arena" class="hidden space-y-6 fade-in">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+                <div>
+                    <h2 class="text-2xl font-bold text-white mb-1 flex items-center gap-3">
+                        <i class="fa-solid fa-code text-emerald-400"></i> Palestra Interattiva
+                    </h2>
+                    <p class="text-slate-400 text-sm">Scrivi i comandi corretti nel terminale simulato. Il file system è reale: puoi navigare con <span class="font-code text-emerald-400">cd</span>, creare file con <span class="font-code text-emerald-400">touch</span> e leggerli con <span class="font-code text-emerald-400">cat</span>.</p>
+                </div>
+                <div class="flex items-center gap-3 shrink-0">
+                    <span id="challenge-counter" class="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1.5 rounded-xl font-medium">Sfida 1 di 1</span>
+                    <button onclick="nextChallenge()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white rounded-xl text-xs font-medium transition-all">
+                        Salta <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Current challenge -->
+                <div class="lg:col-span-1 space-y-4">
+                    <div class="bg-card border border-emerald-500/30 rounded-2xl p-5 shadow-xl shadow-emerald-950/20">
+                        <div class="flex items-center justify-between mb-3">
+                            <span id="challenge-difficulty" class="text-[10px] uppercase tracking-wider text-emerald-400 font-semibold bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">Base</span>
+                            <span id="challenge-id" class="text-[10px] font-code text-slate-500">ex-01</span>
+                        </div>
+                        <h3 class="text-base font-bold text-white" id="challenge-title">—</h3>
+                        <p class="text-slate-300 text-sm mt-2 leading-relaxed" id="challenge-desc"></p>
+                        <button onclick="toggleHint()" class="mt-4 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 transition-all">
+                            <i class="fa-solid fa-lightbulb text-amber-400 mr-1"></i> Mostra suggerimento
+                        </button>
+                        <div id="challenge-hint-box" class="hidden mt-3 bg-slate-900 border border-amber-500/30 p-3 rounded-xl text-xs text-amber-300 font-code">
+                            <span id="challenge-hint-text"></span>
+                        </div>
+                    </div>
+
+                    <div class="bg-card border border-slate-800 rounded-2xl p-5">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Elenco Sfide</h4>
+                            <span class="text-[10px] text-slate-500">clicca per aprire</span>
+                        </div>
+                        <div id="challenge-list" class="space-y-1.5 max-h-72 overflow-y-auto pr-1"></div>
+                    </div>
+
+                    <div class="bg-card border border-slate-800 rounded-2xl p-5">
+                        <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-3"><i class="fa-solid fa-ranking-star text-yellow-400 mr-1"></i> Punteggio</h4>
+                        <div id="scoreboard"></div>
+                    </div>
+
+                    <div class="bg-card border border-slate-800 rounded-2xl p-5">
+                        <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Comandi supportati</h4>
+                        <p class="font-code text-[11px] text-slate-400 leading-relaxed">
+                            pwd, ls (-l -a -h -R), cd, cat, echo, whoami, id, date, cal, uptime, uname (-a), clear, history,
+                            touch, mkdir (-p), rm (-r), cp, mv, head, tail, wc, grep, man, help, tree, exit
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Terminal -->
+                <div class="lg:col-span-2 bg-terminal border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col">
+                    <div class="bg-slate-900/80 border-b border-slate-800 px-4 py-3 flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-3 h-3 rounded-full bg-rose-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+                            <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+                            <span class="ml-3 text-xs font-code text-slate-400" id="term-title">bashmaster@linux: ~</span>
+                        </div>
+                        <span class="text-[10px] text-slate-500 font-code" id="term-status">pronto</span>
+                    </div>
+                    <div id="terminal-output" class="p-5 font-code text-sm text-slate-200 h-[26rem] overflow-y-auto space-y-1.5"></div>
+                    <form id="terminal-form" onsubmit="handleTerminalSubmit(event)" class="bg-slate-900/90 border-t border-slate-800 px-4 py-3 flex items-center gap-3">
+                        <span class="text-emerald-400 font-code text-sm whitespace-nowrap" id="term-prompt">bashmaster@linux:~/workspace$</span>
+                        <input type="text" id="terminal-input" autocomplete="off" autocapitalize="off" spellcheck="false"
+                               placeholder="Scrivi un comando..."
+                               class="flex-1 bg-transparent border-none outline-none font-code text-sm text-white placeholder-slate-600">
+                        <button type="submit" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold rounded-lg text-xs transition-all">Esegui</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================== 3. GENERATOR ===================== -->
+        <section id="tab-generator" class="hidden space-y-6 fade-in">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+                <h2 class="text-2xl font-bold text-white mb-1 flex items-center gap-3">
+                    <i class="fa-solid fa-wand-magic-sparkles text-emerald-400"></i> Generatore di Script Bash
+                </h2>
+                <p class="text-slate-400 text-sm">Seleziona lo scopo e le opzioni: ottieni uno script pronto all'uso con spiegazione riga per riga.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-card border border-slate-800 rounded-2xl p-6 space-y-5 lg:col-span-1">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Scopo dello script</label>
+                        <select id="script-type" onchange="generateScript()" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:border-emerald-500 outline-none">
+                            <option value="backup">Backup di una cartella</option>
+                            <option value="monitor">Monitoraggio risorse</option>
+                            <option value="loop">Ciclo su file di una cartella</option>
+                            <option value="userinfo">Report informazioni utente</option>
+                            <option value="textprocess">Elaborazione testo / log</option>
+                            <option value="args">Script con argomenti</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2" id="param-label">Cartella da elaborare</label>
+                        <input type="text" id="script-param" value="$HOME/workspace" oninput="generateScript()"
+                               class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white font-code focus:border-emerald-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Opzioni</label>
+                        <div class="space-y-2 text-sm text-slate-300">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="opt-comments" checked onchange="generateScript()" class="rounded bg-slate-900 border-slate-700 accent-emerald-500">
+                                Commenti esplicativi
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="opt-strict" checked onchange="generateScript()" class="rounded bg-slate-900 border-slate-700 accent-emerald-500">
+                                Modalità rigida (set -euo pipefail)
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" id="opt-verbose" onchange="generateScript()" class="rounded bg-slate-900 border-slate-700 accent-emerald-500">
+                                Output colorato / log a video
+                            </label>
+                        </div>
+                    </div>
+                    <button onclick="saveCurrentScript()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-xl text-sm font-medium transition-all">
+                        <i class="fa-solid fa-floppy-disk mr-1"></i> Salva script
+                    </button>
+                </div>
+
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="bg-terminal border border-slate-800 rounded-2xl p-6">
+                        <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+                            <span class="text-xs font-code text-emerald-400" id="script-filename">backup.sh</span>
+                            <div class="flex gap-2">
+                                <button onclick="copyScript()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium transition-all">
+                                    <i class="fa-regular fa-copy mr-1"></i> Copia
+                                </button>
+                                <button onclick="downloadScript()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium transition-all">
+                                    <i class="fa-solid fa-download mr-1"></i> Scarica
+                                </button>
+                            </div>
+                        </div>
+                        <pre id="script-output" class="font-code text-[13px] leading-relaxed text-slate-200 overflow-x-auto p-1 max-h-96"><code></code></pre>
+                    </div>
+                    <div class="bg-card border border-slate-800 rounded-2xl p-6">
+                        <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-4"><i class="fa-solid fa-list-ol text-emerald-400 mr-1"></i> Spiegazione riga per riga</h4>
+                        <ul id="script-explanation" class="space-y-3 text-sm"></ul>
+                        <div class="mt-5 pt-4 border-t border-slate-800 text-xs text-slate-400">
+                            <i class="fa-regular fa-lightbulb text-amber-400"></i>
+                            Rendi eseguibile lo script con <code class="text-emerald-400 font-code">chmod +x nome_script.sh</code> e lancialo con <code class="text-emerald-400 font-code">./nome_script.sh</code>.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="saved-scripts-wrap" class="hidden bg-card border border-slate-800 rounded-2xl p-6">
+                <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-4"><i class="fa-solid fa-bookmark text-emerald-400 mr-1"></i> Script salvati</h4>
+                <div id="saved-scripts" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+            </div>
+        </section>
+
+        <!-- ===================== 4. EXERCISES ===================== -->
+        <section id="tab-exercises" class="hidden space-y-6 fade-in">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-white mb-1 flex items-center gap-3">
+                        <i class="fa-solid fa-dumbbell text-emerald-400"></i> Generatore di Esercizi
+                    </h2>
+                    <p class="text-slate-400 text-sm">Scegli un argomento e una difficoltà per creare una sfida inedita con soluzione nascosta.</p>
+                </div>
+                <button onclick="generateNewExercise()" class="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-xl text-sm transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2 shrink-0">
+                    <i class="fa-solid fa-shuffle"></i> Genera esercizio
+                </button>
+            </div>
+
+            <div class="bg-card border border-slate-800 rounded-2xl p-6 flex flex-wrap gap-4">
+                <div class="flex-1 min-w-[200px]">
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Argomento</label>
+                    <select id="ex-filter-topic" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:border-emerald-500 outline-none">
+                        <option value="any">Qualsiasi argomento</option>
+                    </select>
+                </div>
+                <div class="flex-1 min-w-[200px]">
+                    <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Difficoltà</label>
+                    <select id="ex-filter-diff" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:border-emerald-500 outline-none">
+                        <option value="any">Qualsiasi</option>
+                        <option value="Base">Base</option>
+                        <option value="Intermedio">Intermedio</option>
+                        <option value="Avanzato">Avanzato</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="ex-card" class="hidden bg-card border border-emerald-500/25 rounded-2xl p-8 space-y-6 fade-in">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <span id="ex-topic" class="text-xs font-semibold px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">—</span>
+                    <span id="ex-diff" class="text-xs font-semibold px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">—</span>
+                </div>
+                <div>
+                    <h3 id="ex-title" class="text-xl font-bold text-white mb-2">—</h3>
+                    <p id="ex-desc" class="text-slate-300 text-sm leading-relaxed"></p>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+                    <div class="text-xs font-semibold text-amber-300 uppercase tracking-wider mb-1"><i class="fa-solid fa-lightbulb mr-1"></i> Suggerimento</div>
+                    <p id="ex-hint" class="text-sm text-slate-300"></p>
+                </div>
+                <div class="bg-terminal p-4 rounded-xl border border-slate-800 space-y-3">
+                    <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Soluzione</div>
+                    <pre id="ex-solution" class="hidden font-code text-emerald-400 text-sm whitespace-pre-wrap"></pre>
+                    <button onclick="toggleExerciseSolution()" id="ex-solution-btn" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium transition-all">
+                        Mostra soluzione
+                    </button>
+                </div>
+            </div>
+            <p id="ex-empty" class="text-center text-slate-500 text-sm py-8">Nessun esercizio generato. Premi <strong class="text-emerald-400">Genera esercizio</strong> per iniziare.</p>
+        </section>
+
+        <!-- ===================== 5. QUIZ ===================== -->
+        <section id="tab-quiz" class="hidden space-y-6 fade-in">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-white mb-1 flex items-center gap-3">
+                        <i class="fa-solid fa-circle-question text-emerald-400"></i> Quiz a Risposta Multipla
+                    </h2>
+                    <p class="text-slate-400 text-sm">Metti alla prova le tue conoscenze. Il punteggio migliore e lo storico delle partite vengono salvati.</p>
+                </div>
+                <div class="flex gap-2 shrink-0">
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-center">
+                        <div class="text-[10px] uppercase text-slate-500">Record</div>
+                        <div id="quiz-best" class="font-bold text-emerald-400">0%</div>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-center">
+                        <div class="text-[10px] uppercase text-slate-500">Partite</div>
+                        <div id="quiz-plays" class="font-bold text-white">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quiz setup -->
+            <div id="quiz-setup" class="bg-card border border-slate-800 rounded-2xl p-6 space-y-5">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Argomento</label>
+                        <select id="quiz-topic" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:border-emerald-500 outline-none"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Difficoltà</label>
+                        <select id="quiz-diff" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:border-emerald-500 outline-none">
+                            <option value="any">Qualsiasi</option>
+                            <option value="Base">Base</option>
+                            <option value="Intermedio">Intermedio</option>
+                            <option value="Avanzato">Avanzato</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Numero domande</label>
+                        <select id="quiz-count" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:border-emerald-500 outline-none">
+                            <option value="5">5 domande</option>
+                            <option value="10" selected>10 domande</option>
+                            <option value="15">15 domande</option>
+                            <option value="0">Tutte</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-4">
+                    <label class="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                        <input type="checkbox" id="quiz-include-material" checked class="rounded bg-slate-900 border-slate-700 accent-emerald-500">
+                        Includi domande generate dai miei appunti
+                    </label>
+                    <span id="quiz-pool-info" class="text-xs text-slate-500"></span>
+                </div>
+                <button onclick="startQuiz()" class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-xl text-sm transition-all shadow-lg shadow-emerald-500/20">
+                    <i class="fa-solid fa-play mr-1"></i> Inizia il quiz
+                </button>
+            </div>
+
+            <!-- Quiz running -->
+            <div id="quiz-run" class="hidden bg-card border border-emerald-500/25 rounded-2xl p-6 space-y-5">
+                <div class="flex items-center justify-between">
+                    <span id="quiz-progress-label" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Domanda 1 di 10</span>
+                    <span id="quiz-live-score" class="text-xs font-semibold text-emerald-400">0 punti</span>
+                </div>
+                <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden">
+                    <div id="quiz-progress-bar" class="bg-emerald-500 h-2 transition-all" style="width:0%"></div>
+                </div>
+                <div>
+                    <span id="quiz-q-topic" class="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">—</span>
+                    <span id="quiz-q-diff" class="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 ml-1">—</span>
+                </div>
+                <h3 id="quiz-q-text" class="text-lg font-semibold text-white leading-relaxed"></h3>
+                <div id="quiz-options" class="space-y-2.5"></div>
+                <div id="quiz-feedback" class="hidden text-sm rounded-xl p-3 border"></div>
+                <div class="flex justify-between items-center pt-2">
+                    <button onclick="abortQuiz()" class="text-xs text-slate-500 hover:text-rose-400"><i class="fa-solid fa-xmark mr-1"></i> Interrompi</button>
+                    <button id="quiz-next-btn" onclick="quizNext()" class="hidden px-5 py-2 bg-emerald-500 hover:bg-emerald-400 text-black font-semibold rounded-xl text-xs transition-all">Prossima <i class="fa-solid fa-arrow-right ml-1"></i></button>
+                </div>
+            </div>
+
+            <!-- Quiz result -->
+            <div id="quiz-result" class="hidden bg-card border border-emerald-500/25 rounded-2xl p-8 text-center space-y-4 fade-in">
+                <div id="quiz-result-icon" class="text-5xl">🏁</div>
+                <h3 class="text-2xl font-bold text-white" id="quiz-result-title">Quiz completato!</h3>
+                <p class="text-slate-300"><span id="quiz-result-score" class="text-3xl font-bold text-emerald-400">0%</span></p>
+                <p id="quiz-result-detail" class="text-sm text-slate-400"></p>
+                <div class="flex justify-center gap-3 pt-2">
+                    <button onclick="startQuiz()" class="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-xl text-sm transition-all">Riprova</button>
+                    <button onclick="quizSetup()" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-xl text-sm transition-all">Cambia impostazioni</button>
+                </div>
+            </div>
+
+            <!-- Quiz history -->
+            <div id="quiz-history-wrap" class="hidden bg-card border border-slate-800 rounded-2xl p-6">
+                <h4 class="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-4"><i class="fa-solid fa-clock-rotate-left text-emerald-400 mr-1"></i> Storico partite</h4>
+                <div id="quiz-history" class="space-y-2"></div>
+            </div>
+        </section>
+
+        <!-- ===================== 6. MATERIALE ===================== -->
+        <section id="tab-material" class="hidden space-y-6 fade-in">
+            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+                <h2 class="text-2xl font-bold text-white mb-1 flex items-center gap-3">
+                    <i class="fa-solid fa-book-bookmark text-emerald-400"></i> I Miei Appunti / Materiale di Studio
+                </h2>
+                <p class="text-slate-400 text-sm">Aggiungi i tuoi appunti e i tuoi comandi: comparirà in <strong class="text-emerald-300">Teoria</strong> e verrà usato per creare automaticamente <strong class="text-emerald-300">esercizi</strong> nella Palestra e <strong class="text-emerald-300">domande</strong> nel Quiz.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Form -->
+                <div class="bg-card border border-slate-800 rounded-2xl p-6 space-y-4">
+                    <h3 class="text-sm font-semibold text-slate-200 uppercase tracking-wider" id="mat-form-title">Nuovo materiale</h3>
+                    <input type="hidden" id="mat-id" value="">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Titolo *</label>
+                            <input type="text" id="mat-title" placeholder="Es. Permessi dei file" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:border-emerald-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Categoria</label>
+                            <select id="mat-cat" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:border-emerald-500 outline-none">
+                                <option value="basi">Basi</option>
+                                <option value="navigazione">Navigazione</option>
+                                <option value="sistema">Sistema</option>
+                                <option value="material">Miei appunti</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Difficoltà degli esercizi generati</label>
+                        <select id="mat-diff" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white focus:border-emerald-500 outline-none">
+                            <option value="Base">Base</option>
+                            <option value="Intermedio" selected>Intermedio</option>
+                            <option value="Avanzato">Avanzato</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Contenuto / spiegazione</label>
+                        <textarea id="mat-content" rows="4" placeholder="Scrivi qui la tua spiegazione..." class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white font-code focus:border-emerald-500 outline-none resize-y"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Comandi (uno per riga, formato <span class="font-code text-emerald-400">comando | descrizione</span>)</label>
+                        <textarea id="mat-cmds" rows="4" placeholder="chmod +x script.sh | rende eseguibile lo script&#10;grep -i errore log.txt | cerca la parola errore ignorando le maiuscole" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-white font-code focus:border-emerald-500 outline-none resize-y"></textarea>
+                        <p class="text-[11px] text-slate-500 mt-2">La descrizione diventa la consegna dell'esercizio e la domanda del quiz. Se la ometti, verrà chiesto di riprodurre il comando.</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="saveMaterial()" class="flex-1 py-3 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-xl text-sm transition-all">
+                            <i class="fa-solid fa-plus mr-1"></i> <span id="mat-submit-label">Aggiungi materiale</span>
+                        </button>
+                        <button onclick="clearMaterialForm()" class="px-4 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-xl text-sm transition-all">Annulla</button>
+                    </div>
+                    <div class="flex gap-2 pt-2 border-t border-slate-800">
+                        <button onclick="exportMaterials()" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-xl text-xs font-medium transition-all"><i class="fa-solid fa-download mr-1"></i> Esporta JSON</button>
+                        <label class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-xl text-xs font-medium transition-all text-center cursor-pointer">
+                            <i class="fa-solid fa-upload mr-1"></i> Importa JSON
+                            <input type="file" accept=".json,application/json" class="hidden" onchange="importMaterials(event)">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- List -->
+                <div class="space-y-4">
+                    <div class="bg-card border border-slate-800 rounded-2xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-semibold text-slate-200 uppercase tracking-wider">Materiale salvato</h3>
+                            <span id="mat-stat" class="text-xs text-slate-500">0 appunti · 0 comandi</span>
+                        </div>
+                        <div id="material-list" class="space-y-3 max-h-[32rem] overflow-y-auto pr-1"></div>
+                        <p id="material-empty" class="text-slate-500 text-sm py-6 text-center">Nessun materiale aggiunto. Compila il modulo per iniziare.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-dark border-t border-slate-800 mt-12 py-6 text-center text-xs text-slate-500">
+        BashMaster — piattaforma interattiva per imparare Linux Bash &amp; scripting. I progressi sono salvati nel browser.
+    </footer>
+
+<script>
+/* =====================================================================
+   STATO GLOBALE + PERSISTENZA (localStorage)
+   ===================================================================== */
+const STORAGE_KEY = 'bashmaster.v2';
+let state = {
+    completed: [],        // id delle sfide completate (compatibilità)
+    challengeStats: {},   // id -> { completed, points, attempts, hints, at }
+    savedScripts: [],     // { name, code }
+    materials: [],        // { id, title, cat, diff, content, cmds:[{cmd,desc}], at }
+    quiz: { best: 0, plays: 0, history: [] },
+    score: 0,             // punteggio totale
+    lastTab: 'theory'
+};
+try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+        const saved = JSON.parse(raw);
+        state = Object.assign(state, saved);
+        state.challengeStats = state.challengeStats || {};
+        state.materials = state.materials || [];
+        state.quiz = Object.assign({ best: 0, plays: 0, history: [] }, state.quiz || {});
+        state.savedScripts = state.savedScripts || [];
+    }
+} catch (e) { /* storage non disponibile */ }
+
+function persist() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+function resetProgress() {
+    if (!confirm('Vuoi davvero azzerare progressi, punteggi, quiz e script salvati? Gli appunti personali NON verranno toccati.')) return;
+    const materials = state.materials; // conserva il materiale di studio personale
+    state = {
+        completed: [], challengeStats: {}, savedScripts: [], materials: materials,
+        quiz: { best: 0, plays: 0, history: [] }, score: 0, lastTab: 'theory'
+    };
+    persist();
+    refreshProgress();
+    renderChallengeList();
+    renderSavedScripts();
+    renderQuizHeader();
+    renderQuizHistory();
+    loadChallenge();
+}
+function refreshProgress() {
+    document.getElementById('completed-count').innerText = state.completed.length;
+    document.getElementById('score-count').innerText = state.score || 0;
+    const badge = document.getElementById('material-count-badge');
+    if (badge) badge.innerText = state.materials.length;
+}
+function totalScore() {
+    return Object.values(state.challengeStats).reduce((s, c) => s + (c.points || 0), 0);
+}
+function markCompleted(id, points, attempts, hints) {
+    const prev = state.challengeStats[id] || {};
+    const best = Math.max(prev.points || 0, points || 0);
+    state.challengeStats[id] = {
+        completed: true,
+        points: best,
+        attempts: attempts || 1,
+        hints: hints || 0,
+        at: Date.now()
+    };
+    if (!state.completed.includes(id)) state.completed.push(id);
+    state.score = totalScore();
+    persist();
+    refreshProgress();
+    renderChallengeList();
+    renderScoreboard();
+}
+
+/* =====================================================================
+   NAVIGAZIONE A TAB
+   ===================================================================== */
+function switchTab(tabId) {
+    ['theory', 'arena', 'quiz', 'generator', 'exercises', 'material'].forEach(t => {
+        document.getElementById('tab-' + t).classList.add('hidden');
+        document.getElementById('tab-' + t).classList.remove('fade-in');
+        setNavClass('nav-' + t, false, 'desktop');
+        setNavClass('mob-nav-' + t, false, 'mobile');
+    });
+    const tab = document.getElementById('tab-' + tabId);
+    tab.classList.remove('hidden');
+    void tab.offsetWidth;
+    tab.classList.add('fade-in');
+    setNavClass('nav-' + tabId, true, 'desktop');
+    setNavClass('mob-nav-' + tabId, true, 'mobile');
+    state.lastTab = tabId;
+    persist();
+    if (tabId === 'arena') setTimeout(() => document.getElementById('terminal-input').focus(), 60);
+}
+function setNavClass(id, active, kind) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (kind === 'desktop') {
+        el.className = active
+            ? 'px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 bg-emerald-500 text-black shadow-lg shadow-emerald-500/20'
+            : 'px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 text-slate-400 hover:text-white hover:bg-slate-800';
+    } else {
+        el.className = active
+            ? 'p-2 rounded-lg text-xs font-medium flex flex-col items-center text-emerald-400'
+            : 'p-2 rounded-lg text-xs font-medium flex flex-col items-center text-slate-400';
+    }
+}
+
+/* =====================================================================
+   SEZIONE 1 — TEORIA
+   ===================================================================== */
+const THEORY = [
+    { cat:'basi', icon:'fa-laptop-code', color:'blue', title:'Shell, Terminale e Bash',
+      body:`<ul class="text-sm text-slate-300 space-y-2">
+        <li><strong class="text-emerald-400">Shell:</strong> programma che interpreta i comandi (bash, sh, zsh).</li>
+        <li><strong class="text-emerald-400">Terminale:</strong> interfaccia che permette di parlare con la shell (Warp, Xterm, GNOME Terminal).</li>
+        <li><strong class="text-emerald-400">Bash:</strong> la shell più diffusa su Linux e macOS.</li></ul>`,
+      code:'echo $SHELL' },
+    { cat:'basi', icon:'fa-brands fa-windows', color:'purple', title:'Bash su Windows: WSL',
+      body:`<p class="text-sm text-slate-300 mb-3">Su Windows usa <strong class="text-white">WSL</strong> per un Linux completo, oppure Git for Windows (supporto limitato).</p>`,
+      code:'wsl --install' },
+    { cat:'basi', icon:'fa-terminal', color:'cyan', title:'Warp e i terminali moderni',
+      body:`<p class="text-sm text-slate-300">Warp è un terminale con AI integrata: blocchi di comando, suggerimenti e ricerca intelligente nella history.</p>`,
+      code:'history | grep ls' },
+    { cat:'basi', icon:'fa-play', color:'emerald', title:'Primi passi: echo',
+      body:`<p class="text-sm text-slate-300 mb-2">Stampa testo o il valore di variabili di ambiente.</p>`,
+      code:'echo "Hola, BASH"\necho $HOME' },
+    { cat:'basi', icon:'fa-tag', color:'pink', title:'Anatomia del comando',
+      body:`<p class="text-sm text-slate-300 mb-2">Struttura: <span class="font-code text-emerald-400">comando [opzioni] [argomenti]</span></p>
+        <ul class="text-sm text-slate-300 space-y-1">
+          <li><strong class="text-white">comando</strong> → cosa eseguire (<span class="font-code">ls</span>)</li>
+          <li><strong class="text-white">opzioni</strong> → modificano il comportamento (<span class="font-code">-l</span>, <span class="font-code">--help</span>)</li>
+          <li><strong class="text-white">argomenti</strong> → su cosa agire (<span class="font-code">/home</span>)</li></ul>`,
+      code:'ls -l /home' },
+    { cat:'navigazione', icon:'fa-compass', color:'amber', title:'Orientamento: pwd e ls',
+      body:`<ul class="text-sm text-slate-300 space-y-1.5">
+        <li><code class="text-amber-400 font-code">pwd</code> → directory corrente</li>
+        <li><code class="text-amber-400 font-code">ls -l</code> → formato lungo</li>
+        <li><code class="text-amber-400 font-code">ls -a</code> → includi file nascosti</li>
+        <li><code class="text-amber-400 font-code">ls -lh</code> → dimensioni leggibili</li></ul>`,
+      code:'ls -lah' },
+    { cat:'navigazione', icon:'fa-folder-tree', color:'rose', title:'Navigazione: cd e percorsi',
+      body:`<ul class="text-sm text-slate-300 space-y-1.5">
+        <li><code class="text-rose-400 font-code">cd dir</code> entra nella cartella</li>
+        <li><code class="text-rose-400 font-code">cd ..</code> risale di un livello</li>
+        <li><code class="text-rose-400 font-code">cd ~</code> va alla Home</li>
+        <li><strong class="text-white">Assoluto</strong> parte da <span class="font-code">/</span> · <strong class="text-white">Relativo</strong> parte da dove sei</li></ul>`,
+      code:'cd /var/log' },
+    { cat:'sistema', icon:'fa-microchip', color:'indigo', title:'Informazioni di sistema',
+      body:`<ul class="text-sm text-slate-300 space-y-1.5">
+        <li><code class="text-indigo-400 font-code">whoami</code> → utente corrente</li>
+        <li><code class="text-indigo-400 font-code">uname -a</code> → info kernel</li>
+        <li><code class="text-indigo-400 font-code">date</code> / <code class="text-indigo-400 font-code">cal</code> → data e calendario</li>
+        <li><code class="text-indigo-400 font-code">uptime</code> → attività sistema</li></ul>`,
+      code:'uname -a' },
+    { cat:'sistema', icon:'fa-file-lines', color:'teal', title:'Leggere file e filtrare',
+      body:`<ul class="text-sm text-slate-300 space-y-1.5">
+        <li><code class="text-teal-400 font-code">cat file</code> → mostra il contenuto</li>
+        <li><code class="text-teal-400 font-code">head -n 5 file</code> → prime righe</li>
+        <li><code class="text-teal-400 font-code">wc -l file</code> → conta righe</li>
+        <li><code class="text-teal-400 font-code">grep errore file</code> → cerca testo</li></ul>`,
+      code:'grep error /var/log/syslog' },
+    { cat:'sistema', icon:'fa-trash-can', color:'orange', title:'Creare e rimuovere',
+      body:`<ul class="text-sm text-slate-300 space-y-1.5">
+        <li><code class="text-orange-400 font-code">touch nuovo.txt</code> → crea file vuoto</li>
+        <li><code class="text-orange-400 font-code">mkdir -p a/b</code> → crea cartelle</li>
+        <li><code class="text-orange-400 font-code">cp / mv</code> → copia / sposta</li>
+        <li><code class="text-orange-400 font-code">rm -r dir</code> → rimuovi ricorsivamente</li></ul>`,
+      code:'mkdir -p ~/progetti/nuovo' }
+];
+const COLOR_MAP = {
+    blue:'bg-blue-500/10 border-blue-500/20 text-blue-400', purple:'bg-purple-500/10 border-purple-500/20 text-purple-400',
+    cyan:'bg-cyan-500/10 border-cyan-500/20 text-cyan-400', emerald:'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
+    pink:'bg-pink-500/10 border-pink-500/20 text-pink-400', amber:'bg-amber-500/10 border-amber-500/20 text-amber-400',
+    rose:'bg-rose-500/10 border-rose-500/20 text-rose-400', indigo:'bg-indigo-500/10 border-indigo-500/20 text-indigo-400',
+    teal:'bg-teal-500/10 border-teal-500/20 text-teal-400', orange:'bg-orange-500/10 border-orange-500/20 text-orange-400'
+};
+function renderTheory() {
+    const builtin = THEORY.map(t => `
+        <div class="theory-card bg-card border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-all flex flex-col justify-between" data-cat="${t.cat}">
+            <div>
+                <div class="w-10 h-10 rounded-lg border flex items-center justify-center mb-4 ${COLOR_MAP[t.color]}"><i class="fa-solid ${t.icon}"></i></div>
+                <h3 class="font-bold text-white text-lg mb-3">${t.title}</h3>
+                ${t.body}
+                ${t.code ? `<div class="mt-4 bg-terminal p-3 rounded-lg font-code text-xs text-emerald-300 space-y-1 border border-slate-800 whitespace-pre">${escapeHtml(t.code)}</div>` : ''}
+            </div>
+            <div class="mt-4">
+                <button onclick="tryInArena()" class="text-[11px] text-emerald-400 hover:text-emerald-300 font-medium"><i class="fa-solid fa-terminal mr-1"></i> Provalo nella palestra</button>
+            </div>
+        </div>`).join('');
+    document.getElementById('theory-grid').innerHTML = builtin + renderMaterialCards();
+    refreshProgress();
+}
+function renderMaterialCards() {
+    return state.materials.map(m => {
+        const cmds = (m.cmds || []).map(c => c.desc ? `${c.cmd}  →  ${c.desc}` : c.cmd).join('\n');
+        return `
+        <div class="theory-card bg-card border border-emerald-500/20 rounded-xl p-5 hover:border-emerald-500/40 transition-all flex flex-col justify-between"
+             data-cat="material" data-subcat="${escapeHtml(m.cat || 'material')}">
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <div class="w-10 h-10 rounded-lg border bg-emerald-500/10 border-emerald-500/20 flex items-center justify-center text-emerald-400"><i class="fa-solid fa-book-bookmark"></i></div>
+                    <span class="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">Mio appunto</span>
+                </div>
+                <h3 class="font-bold text-white text-lg mb-3">${escapeHtml(m.title)}</h3>
+                ${m.content ? `<p class="text-sm text-slate-300 whitespace-pre-wrap">${escapeHtml(m.content)}</p>` : ''}
+                ${cmds ? `<div class="mt-4 bg-terminal p-3 rounded-lg font-code text-xs text-emerald-300 border border-slate-800 whitespace-pre-wrap">${escapeHtml(cmds)}</div>` : ''}
+                <div class="mt-3 flex flex-wrap gap-2 text-[10px]">
+                    <span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">difficoltà: ${escapeHtml(m.diff || 'Intermedio')}</span>
+                    <span class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">${(m.cmds || []).length} comandi</span>
+                </div>
+            </div>
+            <div class="mt-4 flex gap-3">
+                <button onclick="switchTab('material');editMaterial('${m.id}')" class="text-[11px] text-slate-400 hover:text-white font-medium"><i class="fa-solid fa-pen mr-1"></i> Modifica</button>
+                <button onclick="switchTab('arena')" class="text-[11px] text-emerald-400 hover:text-emerald-300 font-medium"><i class="fa-solid fa-terminal mr-1"></i> Esercitati</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+function tryInArena() {
+    switchTab('arena');
+    document.getElementById('terminal-input').focus();
+}
+function filterTheory(cat) {
+    document.querySelectorAll('.tfilter').forEach(b => {
+        const on = b.dataset.tfilter === cat;
+        b.className = on ? 'tfilter px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500 text-black'
+                         : 'tfilter px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-300 hover:bg-slate-700';
+    });
+    document.querySelectorAll('.theory-card').forEach(c => {
+        const own = c.dataset.cat, sub = c.dataset.subcat;
+        const show = cat === 'all' || own === cat || (cat !== 'material' && sub === cat);
+        c.style.display = show ? '' : 'none';
+    });
+}
+
+/* =====================================================================
+   VIRTUAL FILE SYSTEM
+   ===================================================================== */
+function F(content) { return { type: 'file', content: content }; }
+function D(children) { return { type: 'dir', children: children || {} }; }
+
+const HOME = '/home/bashmaster';
+let fs = D({
+    home: D({ bashmaster: D({
+        workspace: D({
+            'readme.md': F('# Workspace\nCartella di lavoro per gli esercizi.'),
+            'file1.txt': F('riga uno\nriga due\nriga tre'),
+            'file2.sh': F('#!/bin/bash\necho "script di esempio"'),
+            'log.txt': F('2024-01-01 INFO avvio\n2024-01-02 ERROR disco pieno\n2024-01-03 INFO ok'),
+            'documenti': D({ 'note.md': F('Appunti personali'), 'todo.txt': F('studiare bash\nfare esercizi') }),
+            'progetti': D({}),
+            '.config': F('impostazioni nascoste'),
+            '.gitignore': F('*.log\nnode_modules/')
+        })
+    })}),
+    etc: D({
+        'hostname': F('linux-box'),
+        'os-release': F('NAME="Linux Demo"\nVERSION="1.0"\nID=demo'),
+        'passwd': F('root:x:0:0:root:/root:/bin/bash\nbashmaster:x:1000:1000::/home/bashmaster:/bin/bash')
+    }),
+    var: D({ log: D({ 'syslog': F('boot ok\nnetwork up\ndisk warning') }) }),
+    tmp: D({}),
+    usr: D({ bin: D({}), share: D({}) })
+});
+let cwd = HOME + '/workspace';
+let cmdHistory = [];
+let histIdx = -1;
+
+function splitPath(p) {
+    return p.split('/').filter(x => x.length && x !== '.');
+}
+function resolvePath(input) {
+    if (!input || input === '~') return HOME;
+    let p = input;
+    if (p.startsWith('~')) p = HOME + p.slice(1);
+    if (!p.startsWith('/')) p = cwd + '/' + p;
+    const parts = splitPath(p);
+    const out = [];
+    for (const part of parts) {
+        if (part === '..') out.pop();
+        else out.push(part);
+    }
+    return '/' + out.join('/');
+}
+function getNode(path) {
+    const parts = splitPath(path);
+    let node = fs;
+    for (const part of parts) {
+        if (!node || node.type !== 'dir' || !node.children[part]) return null;
+        node = node.children[part];
+    }
+    return node;
+}
+function parentOf(path) {
+    const parts = splitPath(path);
+    const name = parts.pop();
+    return { parent: getNode('/' + parts.join('/')), name };
+}
+function displayPath(p) {
+    if (p === HOME) return '~';
+    if (p.startsWith(HOME + '/')) return '~' + p.slice(HOME.length);
+    return p;
+}
+function prompt() { return 'bashmaster@linux:' + displayPath(cwd) + '$'; }
+function updatePrompt() {
+    document.getElementById('term-prompt').innerText = prompt();
+    document.getElementById('term-title').innerText = 'bashmaster@linux: ' + displayPath(cwd);
+}
+
+/* =====================================================================
+   TERMINALE — OUTPUT E RENDERING
+   ===================================================================== */
+const out = () => document.getElementById('terminal-output');
+function print(html, cls) {
+    const div = document.createElement('div');
+    if (cls) div.className = cls;
+    div.innerHTML = html;
+    out().appendChild(div);
+    out().scrollTop = out().scrollHeight;
+}
+function escapeHtml(t) {
+    return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/* =====================================================================
+   TERMINALE — ESPANSIONE ED ESECUZIONE
+   ===================================================================== */
+function expandVars(str) {
+    const vars = {
+        HOME: HOME, USER: 'bashmaster', SHELL: '/bin/bash', PWD: cwd,
+        PATH: '/usr/local/bin:/usr/bin:/bin'
+    };
+    return str
+        .replace(/\$\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m))
+        .replace(/\$(\w+)/g, (m, k) => (k in vars ? vars[k] : m))
+        .replace(/\$\(pwd\)/g, cwd);
+}
+function tokenize(input) {
+    const tokens = [];
+    const re = /"([^"]*)"|'([^']*)'|(\S+)/g;
+    let m;
+    while ((m = re.exec(input)) !== null) {
+        tokens.push(m[1] !== undefined ? m[1] : (m[2] !== undefined ? m[2] : m[3]));
+    }
+    return tokens;
+}
+function parseFlags(tokens) {
+    const flags = new Set(); const args = [];
+    tokens.forEach(t => {
+        if (t.startsWith('-') && t.length > 1 && t !== '--') t.slice(1).split('').forEach(c => flags.add(c));
+        else args.push(t);
+    });
+    return { flags, args };
+}
+function humanSize(bytes) {
+    if (bytes < 1024) return bytes + 'B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + 'K';
+    return (bytes / 1048576).toFixed(1) + 'M';
+}
+function perms(node) { return node.type === 'dir' ? 'drwxr-xr-x' : '-rw-r--r--'; }
+function sizeOf(node) {
+    if (node.type === 'dir') return 4096;
+    return new Blob([node.content || '']).size;
+}
+function listEntries(dirPath, showHidden) {
+    const node = getNode(dirPath);
+    if (!node || node.type !== 'dir') return null;
+    const names = Object.keys(node.children);
+    const visible = showHidden ? names : names.filter(n => !n.startsWith('.'));
+    return { node, names: visible, total: names.length };
+}
+
+function runCommand(raw) {
+    const trimmed = raw.trim();
+    if (!trimmed) return { output: '' };
+    const expanded = expandVars(trimmed);
+    const tokens = tokenize(expanded);
+    const cmd = tokens[0];
+    const { flags, args } = parseFlags(tokens.slice(1));
+    const A = args[0];
+
+    switch (cmd) {
+        case 'clear': out().innerHTML = ''; return { output: '', silent: true };
+
+        case 'help':
+            return { output: `Comandi disponibili: pwd, ls, cd, cat, echo, whoami, id, date, cal, uptime, uname,
+clear, history, touch, mkdir, rm, cp, mv, head, tail, wc, grep, man, tree, exit` };
+
+        case 'pwd': return { output: cwd };
+
+        case 'whoami': return { output: 'bashmaster' };
+
+        case 'id': return { output: 'uid=1000(bashmaster) gid=1000(bashmaster) gruppi=1000(bashmaster),27(sudo)' };
+
+        case 'date': return { output: new Date().toLocaleString('it-IT') };
+
+        case 'cal': {
+            const d = new Date(); const y = d.getFullYear(), mo = d.getMonth();
+            const first = new Date(y, mo, 1); const days = new Date(y, mo + 1, 0).getDate();
+            let lines = [`     ${first.toLocaleString('it-IT', { month: 'long' })} ${y}`, 'Lu Ma Me Gi Ve Sa Do'];
+            let week = '   '.repeat((first.getDay() + 6) % 7);
+            for (let i = 1; i <= days; i++) {
+                week += String(i).padStart(2) + ' ';
+                if ((first.getDay() + i - 1) % 7 === 0) { lines.push(week.trimEnd()); week = ''; }
+            }
+            if (week.trim()) lines.push(week.trimEnd());
+            return { output: lines.join('\n') };
+        }
+
+        case 'uptime':
+            return { output: ` ${new Date().toLocaleTimeString('it-IT')} up 2:14, 1 user, load average: 0.15, 0.10, 0.05` };
+
+        case 'uname':
+            if (flags.has('a')) return { output: 'Linux linux-box 6.5.0-generic #1 SMP x86_64 GNU/Linux' };
+            return { output: 'Linux' };
+
+        case 'echo': {
+            const text = tokens.slice(1).join(' ');
+            return { output: text.replace(/^["']|["']$/g, '') };
+        }
+
+        case 'history':
+            return { output: cmdHistory.map((c, i) => String(i + 1).padStart(4) + '  ' + c).join('\n') };
+
+        case 'exit':
+            print('logout', 'text-slate-500');
+            return { output: '', silent: true };
+
+        case 'man':
+            return { output: manPage(A) };
+
+        case 'tree': {
+            const target = A ? resolvePath(A) : cwd;
+            const node = getNode(target);
+            if (!node || node.type !== 'dir') return { output: `tree: '${A || target}': non è una directory` };
+            let lines = [displayPath(target)];
+            function walk(n, prefix) {
+                const keys = Object.keys(n.children);
+                keys.forEach((k, i) => {
+                    const last = i === keys.length - 1;
+                    lines.push(prefix + (last ? '└── ' : '├── ') + k);
+                    if (n.children[k].type === 'dir') walk(n.children[k], prefix + (last ? '    ' : '│   '));
+                });
+            }
+            walk(node, '');
+            return { output: lines.join('\n') };
+        }
+
+        case 'ls': {
+            const target = A ? resolvePath(A) : cwd;
+            const showHidden = flags.has('a');
+            const res = listEntries(target, showHidden);
+            if (!res) return { output: `ls: impossibile accedere a '${A || target}': File o directory non esistente` };
+            let names = res.names;
+
+            if (flags.has('R')) {
+                const lines = [displayPath(target) + ':'];
+                (showHidden ? res.names : res.names).forEach(n => lines.push('  ' + n));
+                names = res.names;
+                if (!flags.has('l')) return { output: lines.join('\n') };
+            }
+
+            if (flags.has('l')) {
+                const rows = [];
+                if (showHidden) rows.push('totale ' + Math.ceil(res.total / 2));
+                (showHidden ? res.names : res.names).forEach(n => {
+                    const child = res.node.children[n];
+                    const size = flags.has('h') ? humanSize(sizeOf(child)) : String(sizeOf(child));
+                    rows.push(`${perms(child)} 1 bashmaster bashmaster ${size.padStart(5)} ${n}`);
+                });
+                return { output: rows.join('\n') };
+            }
+            // Colonne
+            const cols = names.map(n => res.node.children[n].type === 'dir' ? n + '/' : n);
+            return { output: cols.join('  ') };
+        }
+
+        case 'cd': {
+            const target = A ? resolvePath(A) : HOME;
+            const node = getNode(target);
+            if (!node) return { output: `cd: ${A}: File o directory non esistente`, error: true };
+            if (node.type !== 'dir') return { output: `cd: ${A}: Non è una directory`, error: true };
+            cwd = target;
+            updatePrompt();
+            return { output: '', silent: true };
+        }
+
+        case 'cat': {
+            if (!args.length) return { output: 'cat: manca un operando', error: true };
+            const parts = [];
+            for (const a of args) {
+                const node = getNode(resolvePath(a));
+                if (!node) return { output: `cat: ${a}: File o directory non esistente`, error: true };
+                if (node.type === 'dir') return { output: `cat: ${a}: È una directory`, error: true };
+                parts.push(node.content || '');
+            }
+            return { output: parts.join('\n') };
+        }
+
+        case 'head': case 'tail': {
+            // Parse: head [-n N | -N] FILE
+            let n = 10, fileArg = null;
+            const rest = tokens.slice(1);
+            for (let i = 0; i < rest.length; i++) {
+                const t = rest[i];
+                if (t === '-n') { n = parseInt(rest[i + 1], 10) || 10; i++; }
+                else if (/^-\d+$/.test(t)) { n = parseInt(t.slice(1), 10); }
+                else if (!t.startsWith('-')) fileArg = t;
+            }
+            if (!fileArg) return { output: `${cmd}: manca un operando`, error: true };
+            const node = getNode(resolvePath(fileArg));
+            if (!node || node.type !== 'file') return { output: `${cmd}: ${fileArg}: file non valido`, error: true };
+            const lines = (node.content || '').split('\n');
+            return { output: (cmd === 'head' ? lines.slice(0, n) : lines.slice(-n)).join('\n') };
+        }
+
+        case 'wc': {
+            const node = getNode(resolvePath(A));
+            if (!node || node.type !== 'file') return { output: `wc: ${A || ''}: file non valido`, error: true };
+            const content = node.content || '';
+            if (flags.has('l')) return { output: `${content.split('\n').length} ${A}` };
+            return { output: `${content.split('\n').length}\t${content.split(/\s+/).filter(Boolean).length}\t${content.length} ${A}` };
+        }
+
+        case 'grep': {
+            if (args.length < 2) return { output: 'grep: uso: grep PATTERN FILE', error: true };
+            const pattern = args[0];
+            const node = getNode(resolvePath(args[1]));
+            if (!node || node.type !== 'file') return { output: `grep: ${args[1]}: file non valido`, error: true };
+            const re = new RegExp(pattern, flags.has('i') ? 'i' : '');
+            const matches = (node.content || '').split('\n').filter(l => re.test(l));
+            return { output: matches.join('\n') || '', error: !matches.length };
+        }
+
+        case 'touch': {
+            if (!A) return { output: 'touch: manca un operando', error: true };
+            const target = resolvePath(A);
+            const { parent, name } = parentOf(target);
+            if (!parent || parent.type !== 'dir') return { output: `touch: impossibile creare '${A}'`, error: true };
+            if (!parent.children[name]) parent.children[name] = F('');
+            return { output: '', silent: true };
+        }
+
+        case 'mkdir': {
+            if (!A) return { output: 'mkdir: manca un operando', error: true };
+            const target = resolvePath(A);
+            if (getNode(target)) return { output: `mkdir: impossibile creare la directory '${A}': File esistente`, error: true };
+            if (flags.has('p')) {
+                const parts = splitPath(target); let cur = fs; let path = '';
+                for (const part of parts) {
+                    path += '/' + part;
+                    if (!cur.children[part]) cur.children[part] = D({});
+                    cur = cur.children[part];
+                }
+                return { output: '', silent: true };
+            }
+            const { parent, name } = parentOf(target);
+            if (!parent || parent.type !== 'dir') return { output: `mkdir: impossibile creare la directory '${A}'`, error: true };
+            parent.children[name] = D({});
+            return { output: '', silent: true };
+        }
+
+        case 'rm': {
+            if (!A) return { output: 'rm: manca un operando', error: true };
+            const target = resolvePath(A);
+            const node = getNode(target);
+            if (!node) return { output: `rm: impossibile rimuovere '${A}': File o directory non esistente`, error: true };
+            if (node.type === 'dir' && !(flags.has('r') || flags.has('R'))) return { output: `rm: impossibile rimuovere '${A}': È una directory (usa -r)`, error: true };
+            const { parent, name } = parentOf(target);
+            delete parent.children[name];
+            return { output: '', silent: true };
+        }
+
+        case 'cp': case 'mv': {
+            if (args.length < 2) return { output: `${cmd}: uso: ${cmd} ORIGINE DESTINAZIONE`, error: true };
+            const src = getNode(resolvePath(args[0]));
+            if (!src) return { output: `${cmd}: '${args[0]}': non trovato`, error: true };
+            let dstPath = resolvePath(args[1]);
+            let dstNode = getNode(dstPath);
+            if (dstNode && dstNode.type === 'dir') { const { parent, name } = parentOf(dstPath); parent.children[name].children[args[0].split('/').pop()] = clone(src); }
+            else { const { parent, name } = parentOf(dstPath); if (!parent) return { output: `${cmd}: destinazione non valida`, error: true }; parent.children[name] = clone(src); }
+            if (cmd === 'mv') { const sp = parentOf(resolvePath(args[0])); delete sp.parent.children[sp.name]; }
+            return { output: '', silent: true };
+        }
+
+        default:
+            return { output: `bash: ${cmd}: comando non trovato. Digita 'help' per l'elenco.`, error: true };
+    }
+}
+function clone(n) { return JSON.parse(JSON.stringify(n)); }
+function manPage(cmd) {
+    const pages = {
+        ls:    'ls — elenca i file di una directory.\n  -l  formato lungo\n  -a  includi i nascosti\n  -h  dimensioni leggibili\n  -R  ricorsivo\nEsempio: ls -lah',
+        cd:    'cd — cambia directory.\nEsempi: cd /var, cd .., cd ~',
+        pwd:   'pwd — stampa la directory corrente.',
+        echo:  'echo — stampa testo o variabili.\nEsempio: echo "$HOME"',
+        grep:  'grep — cerca un pattern nel testo.\n  -i  ignora maiuscole\nEsempio: grep error log.txt',
+        cat:   'cat — concatena e mostra file.\nEsempio: cat note.md',
+        mkdir: 'mkdir — crea directory.\n  -p  crea i livelli intermedi\nEsempio: mkdir -p a/b/c',
+        rm:    'rm — rimuove file o directory.\n  -r  ricorsivo\nEsempio: rm -r vecchia_cartella',
+        touch: 'touch — crea un file vuoto o aggiorna la data.\nEsempio: touch nuovo.txt',
+        tree:  'tree — mostra la struttura delle directory come albero.',
+        chmod: 'chmod — cambia i permessi di un file.\nEsempio: chmod +x script.sh (rende eseguibile)',
+        uname: 'uname — informazioni sul sistema.\n  -a  tutte le informazioni'
+    };
+    if (!cmd || !pages[cmd]) return `Nessuna pagina di manuale per '${cmd || ''}' in questa simulazione. Prova: ${Object.keys(pages).join(', ')}`;
+    return pages[cmd];
+}
+
+/* =====================================================================
+   SFIDE DELLA PALESTRA
+   ===================================================================== */
+const CHALLENGES = [
+    { id:'ex-01', difficulty:'Base', title:'Il primo saluto',
+      desc:'Stampa a schermo la scritta <code class="font-code text-emerald-400">Hola, BASH</code>.',
+      hint:'echo "Hola, BASH"',
+      check: (cmd) => /^echo\s+["']?Hola, BASH["']?$/.test(cmd) },
+    { id:'ex-02', difficulty:'Base', title:'Dove sono?',
+      desc:'Mostra il percorso assoluto della cartella in cui ti trovi.',
+      hint:'pwd', check: (cmd) => cmd === 'pwd' },
+    { id:'ex-03', difficulty:'Base', title:'Tutti i file, in dettaglio',
+      desc:'Elenca tutti i file (compresi i nascosti) in formato lungo con dimensioni leggibili.',
+      hint:'ls -la -h  (oppure ls -lah)',
+      check: (cmd) => /^ls\s+-(?=[a-z]*l)(?=[a-z]*a)[a-z]*\s*$/.test(cmd) || /^ls\s+-l\s+-a/.test(cmd) || /^ls\s+-l\s+-ah?/.test(cmd) },
+    { id:'ex-04', difficulty:'Base', title:'Chi sei?',
+      desc:'Mostra il nome dell\'utente attualmente collegato.',
+      hint:'whoami', check: (cmd) => cmd === 'whoami' },
+    { id:'ex-05', difficulty:'Base', title:'La shell corrente',
+      desc:'Stampa il valore della variabile d\'ambiente <code class="font-code">SHELL</code>.',
+      hint:'echo $SHELL', check: (cmd) => /^echo\s+["']?\$SHELL["']?$/.test(cmd) },
+    { id:'ex-06', difficulty:'Intermedio', title:'Cambio di cartella',
+      desc:'Entra nella cartella <code class="font-code">documenti</code> partendo dalla workspace.',
+      hint:'cd documenti', check: (cmd, ctx) => /^cd\s+\.?\/?documenti\/?$/.test(cmd) && ctx.cwd.endsWith('/documenti') },
+    { id:'ex-07', difficulty:'Intermedio', title:'Leggi un file',
+      desc:'Mostra il contenuto del file <code class="font-code">log.txt</code>.',
+      hint:'cat log.txt', check: (cmd) => /^cat\s+(\.\/)?log\.txt$/.test(cmd) },
+    { id:'ex-08', difficulty:'Intermedio', title:'Cerca nel log',
+      desc:'Trova le righe che contengono la parola <code class="font-code">ERROR</code> in <code class="font-code">log.txt</code>.',
+      hint:'grep ERROR log.txt', check: (cmd) => /^grep\s+(-[a-z]+\s+)?ERROR\s+(\.\/)?log\.txt$/.test(cmd) },
+    { id:'ex-09', difficulty:'Intermedio', title:'Crea una cartella annidata',
+      desc:'Crea la struttura di cartelle <code class="font-code">progetti/nuovo</code> a partire dalla workspace.',
+      hint:'mkdir -p progetti/nuovo', check: (cmd) => /^mkdir\s+-p\s+progetti\/nuovo\/?$/.test(cmd) },
+    { id:'ex-10', difficulty:'Avanzato', title:'Torna alla Home',
+      desc:'Spostati nella tua directory personale con il percorso abbreviato.',
+      hint:'cd ~', check: (cmd, ctx) => cmd === 'cd ~' && ctx.cwd === '/home/bashmaster' },
+    { id:'ex-11', difficulty:'Avanzato', title:'Dimensioni della workspace',
+      desc:'Visualizza le dimensioni leggibili di tutti i file della cartella corrente, in forma ricorsiva.',
+      hint:'ls -lahR (o ls -lRh con -a)',
+      check: (cmd) => /^ls\s+-[a-z]*R/.test(cmd) },
+    { id:'ex-12', difficulty:'Avanzato', title:'Conta le righe',
+      desc:'Conta quante righe contiene <code class="font-code">file1.txt</code>.',
+      hint:'wc -l file1.txt', check: (cmd) => /^wc\s+-l\s+(\.\/)?file1\.txt$/.test(cmd) },
+
+    { id:'ex-13', difficulty:'Intermedio', title:'Test: file esiste',
+      desc:`Verifica se <code class="font-code">test_exist.txt</code> è un file regolare e in tal caso stampa <code class="font-code">ESISTE</code>.`,
+      hint:`[ -f test_exist.txt ] && echo ESISTE`,
+      check: (cmd) => /^[^#;]*\[\s*-f\s+test_exist\.txt\s*\].*&&.*echo\s+ESISTE/.test(cmd) },
+    { id:'ex-14', difficulty:'Intermedio', title:'Test: è una directory',
+      desc:`Verifica se <code class="font-code">progetti</code> è una directory e in tal caso stampa <code class="font-code">DIR</code>.`,
+      hint:`[ -d progetti ] && echo DIR`,
+      check: (cmd) => /^[^#;]*\[\s*-d\s+progetti\s*\].*&&.*echo\s+DIR/.test(cmd) },
+    { id:'ex-15', difficulty:'Intermedio', title:'Ciclo for su lista',
+      desc:`Stampa i numeri <code class="font-code">1</code>, <code class="font-code">2</code> e <code class="font-code">3</code> su righe separate usando un ciclo <code class="font-code">for</code>.`,
+      hint:`for i in 1 2 3; do echo $i; done`,
+      check: (cmd) => /^for\s+i\s+in\s+1\s+2\s+3.*do.*echo.*done/.test(cmd) },
+    { id:'ex-16', difficulty:'Intermedio', title:'Ciclo while',
+      desc:`Parti da <code class="font-code">n=1</code> e stampa <code class="font-code">ok</code> finché <code class="font-code">n</code> è minore di 3, incrementandolo con <code class="font-code">n=$((n+1))</code>.`,
+      hint:`n=1; while [ $n -lt 3 ]; do echo ok; n=$((n+1)); done`,
+      check: (cmd) => /while\s+\[\s*\$n\s+-lt\s+3\s*\]/.test(cmd) },
+    { id:'ex-17', difficulty:'Avanzato', title:'Funzione con parametro',
+      desc:`Crea una funzione <code class="font-code">saluta</code> che stampa <code class="font-code">Ciao $1</code> e invocala passandole <code class="font-code">Mario</code>.`,
+      hint:`saluta() { echo "Ciao $1"; }; saluta Mario`,
+      check: (cmd) => /saluta\(\).*Ciao.*\$1/.test(cmd) },    { id:'ex-18', difficulty:'Avanzato', title:'true && echo OK',
+      desc:`Usa <code class="font-code">&&</code> per stampare <code class="font-code">OK</code> dopo <code class="font-code">true</code>.`,
+      hint:`true && echo OK`,
+      check: (cmd) => /^true\s+&&\s+echo\s+OK/.test(cmd) },
+    { id:'ex-19', difficulty:'Avanzato', title:'false || echo FALLITO',
+      desc:`Usa <code class="font-code">||</code> per gestire il fallimento di <code class="font-code">false</code>.`,
+      hint:`false || echo FALLITO`,
+      check: (cmd) => /^false\s+\|\|\s+echo\s+FALLITO/.test(cmd) },
+    { id:'ex-20', difficulty:'Avanzato', title:'crontab: modifica',
+      desc:`Apri l'editor per modificare la tabella dei cron job.`,
+      hint:`crontab -e`,
+      check: (cmd) => /^crontab\s+-e$/.test(cmd) },
+    { id:'ex-21', difficulty:'Avanzato', title:'crontab: elenca',
+      desc:`Elenca i cron job dell'utente corrente.`,
+      hint:`crontab -l`,
+      check: (cmd) => /^crontab\s+-l$/.test(cmd) },
+];
+
+/* --- Sfide personalizzate generate dagli appunti dell'utente --- */
+let customChallenges = [];
+const DIFF_POINTS = { Base: 10, Intermedio: 20, Avanzato: 30 };
+let session = { attempts: 0, hints: 0 };
+
+function normalizeCmd(s) {
+    return String(s).trim().replace(/\s+/g, ' ').replace(/^["']|["']$/g, '');
+}
+function lowerFirst(s) { return s.charAt(0).toLowerCase() + s.slice(1); }
+function buildCustomChallenges() {
+    customChallenges = [];
+    state.materials.forEach(m => {
+        (m.cmds || []).forEach((c, i) => {
+            const expected = (c.cmd || '').trim();
+            if (!expected) return;
+            const desc = (c.desc || '').trim();
+            customChallenges.push({
+                id: `cm-${m.id}-${i}`,
+                difficulty: m.diff || 'Intermedio',
+                custom: true,
+                title: desc || `Comando dall'appunto: ${m.title}`,
+                desc: desc
+                    ? `Dal tuo appunto «${escapeHtml(m.title)}»: digita il comando che ${escapeHtml(lowerFirst(desc))}`
+                    : `Riproduci esattamente il comando indicato nel tuo appunto «${escapeHtml(m.title)}» (lo trovi nella sezione Teoria).`,
+                hint: desc ? `Inizia con: ${escapeHtml(expected.split(/\s+/)[0])} …` : escapeHtml(expected),
+                check: (cmd) => normalizeCmd(cmd) === normalizeCmd(expected)
+            });
+        });
+    });
+}
+function getChallenges() { return CHALLENGES.concat(customChallenges); }
+function currentChallenge() { return getChallenges()[currentChallengeIndex]; }
+
+
+let currentChallengeIndex = 0;
+function loadChallenge() {
+    const all = getChallenges();
+    if (currentChallengeIndex >= all.length) currentChallengeIndex = 0;
+    const ch = all[currentChallengeIndex];
+    if (!ch) return;
+    session = { attempts: 0, hints: 0 };
+    document.getElementById('challenge-difficulty').innerText = ch.difficulty;
+    document.getElementById('challenge-id').innerText = ch.id;
+    document.getElementById('challenge-title').innerText = ch.title;
+    document.getElementById('challenge-desc').innerHTML = ch.desc;
+    document.getElementById('challenge-hint-text').innerHTML = ch.hint;
+    document.getElementById('challenge-counter').innerText = `Sfida ${currentChallengeIndex + 1} di ${all.length}`;
+    document.getElementById('challenge-hint-box').classList.add('hidden');
+    renderScoreboard();
+    const st = state.challengeStats[ch.id];
+    if (st && st.completed) {
+        print(`<span class="text-slate-500">↻ Già completata (record ${st.points} pt). Ripetila per confermare il punteggio.</span>`);
+    }
+}
+function toggleHint() {
+    const box = document.getElementById('challenge-hint-box');
+    box.classList.toggle('hidden');
+    if (!box.classList.contains('hidden')) session.hints = Math.max(session.hints, 1);
+}
+function nextChallenge() {
+    const all = getChallenges();
+    currentChallengeIndex = (currentChallengeIndex + 1) % all.length;
+    loadChallenge();
+}
+function goToChallenge(i) {
+    currentChallengeIndex = i;
+    loadChallenge();
+    switchTab('arena');
+}
+function renderChallengeList() {
+    const all = getChallenges();
+    document.getElementById('challenge-list').innerHTML = all.map((ch, i) => {
+        const st = state.challengeStats[ch.id];
+        const done = st && st.completed;
+        const active = i === currentChallengeIndex;
+        return `<button onclick="goToChallenge(${i})" class="w-full text-left px-3 py-2 rounded-lg text-xs transition-all flex items-center justify-between gap-2
+            ${active ? 'bg-emerald-500/15 border border-emerald-500/40 text-white' : 'bg-slate-900 border border-slate-800 text-slate-300 hover:border-slate-700'}">
+            <span class="flex items-center gap-2 truncate">
+                <i class="fa-solid ${done ? 'fa-circle-check text-emerald-400' : 'fa-circle text-slate-600'} ${ch.custom ? 'text-emerald-300' : ''} text-[10px]"></i>
+                <span class="truncate">${ch.custom ? '<i class="fa-solid fa-book-bookmark text-[8px] text-emerald-400 mr-1"></i>' : ''}${escapeHtml(ch.title)}</span>
+            </span>
+            <span class="text-[9px] uppercase text-slate-500 shrink-0">${done ? '<span class="text-yellow-300">' + st.points + 'pt</span>' : ch.difficulty.slice(0, 3)}</span>
+        </button>`;
+    }).join('');
+    refreshProgress();
+}
+function renderScoreboard() {
+    const el = document.getElementById('scoreboard');
+    if (!el) return;
+    const all = getChallenges();
+    const done = all.filter(c => state.challengeStats[c.id] && state.challengeStats[c.id].completed).length;
+    const ch = currentChallenge();
+    const st = ch ? state.challengeStats[ch.id] : null;
+    const base = ch ? (DIFF_POINTS[ch.difficulty] || 10) : 0;
+    const byDiff = (d) => all.filter(c => c.difficulty === d && state.challengeStats[c.id] && state.challengeStats[c.id].completed).length;
+    el.innerHTML = `
+        <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-400">Punteggio totale</span>
+            <span class="text-2xl font-bold text-yellow-300">${state.score || 0}</span>
+        </div>
+        <div class="flex items-center justify-between text-xs mt-1">
+            <span class="text-slate-400">Sfide completate</span>
+            <span class="text-emerald-400 font-semibold">${done} / ${all.length}</span>
+        </div>
+        <div class="grid grid-cols-3 gap-2 mt-3 text-center">
+            <div class="bg-slate-900 border border-slate-800 rounded-lg py-1.5">
+                <div class="text-[9px] text-slate-500 uppercase">Base</div><div class="text-white font-bold text-sm">${byDiff('Base')}</div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-lg py-1.5">
+                <div class="text-[9px] text-slate-500 uppercase">Inter.</div><div class="text-white font-bold text-sm">${byDiff('Intermedio')}</div>
+            </div>
+            <div class="bg-slate-900 border border-slate-800 rounded-lg py-1.5">
+                <div class="text-[9px] text-slate-500 uppercase">Avanz.</div><div class="text-white font-bold text-sm">${byDiff('Avanzato')}</div>
+            </div>
+        </div>
+        ${st && st.completed
+            ? `<div class="mt-3 text-[11px] text-slate-400">Record sfida corrente: <strong class="text-yellow-300">${st.points} pt</strong> · tentativi: ${st.attempts}</div>`
+            : `<div class="mt-3 text-[11px] text-slate-400">Valore sfida corrente: <strong class="text-emerald-300">fino a ${base} pt</strong></div>`}
+    `;
+}
+
+
+/* =====================================================================
+   HANDLER INPUT TERMINALE
+   ===================================================================== */
+function handleTerminalSubmit(e) {
+    e.preventDefault();
+    const input = document.getElementById('terminal-input');
+    const raw = input.value.trim();
+    if (!raw) return;
+    cmdHistory.push(raw);
+    histIdx = cmdHistory.length;
+
+    print(`<span class="text-slate-500">${escapeHtml(prompt())}</span> <span class="text-emerald-300">${escapeHtml(raw)}</span>`);
+
+    // Supporto minimale per pipe: comando | grep pattern
+    let result;
+    if (raw.includes('|')) {
+        result = runPipeline(raw);
+    } else {
+        result = runCommand(raw);
+    }
+
+    if (result && result.output) {
+        print(escapeHtml(result.output), result.error ? 'text-rose-400' : 'text-slate-200');
+    }
+
+    input.value = '';
+    out().scrollTop = out().scrollHeight;
+
+    // Validazione della sfida + assegnazione punteggio
+    const ch = currentChallenge();
+    if (ch) {
+        session.attempts++;
+        if (ch.check(raw, { cwd })) {
+            const base = DIFF_POINTS[ch.difficulty] || 10;
+            let points = base;
+            if (session.hints) points -= 5;
+            if (session.attempts > 8) points -= 2;
+            points = Math.max(5, points);
+            markCompleted(ch.id, points, session.attempts, session.hints);
+            const extra = session.attempts === 1 && !session.hints ? ' · primo colpo!' : '';
+            print(`<span class="text-emerald-300">🎉 Sfida "${escapeHtml(ch.title)}" completata: +${points} punti${extra}</span>`, 'bg-emerald-950/40 p-2 rounded border border-emerald-500/30');
+            document.getElementById('term-status').innerText = 'sfida completata';
+        } else {
+            document.getElementById('term-status').innerText = 'pronto';
+        }
+    }
+}
+function runPipeline(raw) {
+    const [left, ...rest] = raw.split('|').map(s => s.trim());
+    const base = runCommand(left);
+    let text = base.output || '';
+    rest.forEach(seg => {
+        const t = tokenize(expandVars(seg));
+        const cmd = t[0];
+        if (cmd === 'grep') {
+            const { flags, args } = parseFlags(t.slice(1));
+            const re = new RegExp(args[0], flags.has('i') ? 'i' : '');
+            text = text.split('\n').filter(l => re.test(l)).join('\n');
+        } else if (cmd === 'wc') {
+            const { flags } = parseFlags(t.slice(1));
+            if (flags.has('l')) text = String(text.split('\n').length);
+            else text = `${text.split('\n').length}\t${text.split(/\s+/).filter(Boolean).length}\t${text.length}`;
+        } else if (cmd === 'sort') {
+            text = text.split('\n').sort().join('\n');
+        } else {
+            text = `${cmd}: pipe non supportata`;
+        }
+    });
+    return { output: text };
+}
+// History con frecce su/giù
+document.getElementById('terminal-input').addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (histIdx > 0) { histIdx--; e.target.value = cmdHistory[histIdx]; }
+    } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (histIdx < cmdHistory.length - 1) { histIdx++; e.target.value = cmdHistory[histIdx]; }
+        else { histIdx = cmdHistory.length; e.target.value = ''; }
+    }
+});
+
+/* =====================================================================
+   SEZIONE 3 — GENERATORE SCRIPT
+   ===================================================================== */
+function buildScript() {
+    const type = document.getElementById('script-type').value;
+    const param = document.getElementById('script-param').value.trim() || '/tmp';
+    const comments = document.getElementById('opt-comments').checked;
+    const strict = document.getElementById('opt-strict').checked;
+    const verbose = document.getElementById('opt-verbose').checked;
+
+    const L = []; // { code, explain }
+    const add = (code, explain) => L.push({ code, explain });
+
+    add('#!/bin/bash', 'Shebang: indica al sistema di eseguire lo script con Bash.');
+    if (comments) add('# Script generato da BashMaster — scopo: ' + type, 'Commento descrittivo dello scopo dello script.');
+    if (strict) {
+        add('set -euo pipefail', 'Modalità rigida: esce sugli errori, vieta variabili non definite e propaga gli errori nelle pipeline.');
+    }
+    if (verbose) add('echo -e "\\e[32m[START]\\e[0m avvio esecuzione"', 'Messaggio colorato di avvio.');
+    L.push({ code: '', explain: '' });
+
+    if (type === 'backup') {
+        add(`DEST="${param}"`, 'Cartella di origine di cui fare il backup.');
+        add('OUT="backup_$(date +%Y%m%d_%H%M%S).tar.gz"', 'Nome archivio con timestamp: evita di sovrascrivere backup precedenti.');
+        if (comments) add('echo "[INFO] Avvio backup di $DEST"', 'Avviso all\'utente.');
+        add('tar -czf "$OUT" "$DEST"', 'Crea l\'archivio compresso (.tar.gz) della cartella indicata.');
+        add('echo "[OK] Backup salvato in $OUT"', 'Conferma a fine operazione.');
+    } else if (type === 'monitor') {
+        if (comments) add('echo "=== STATO DEL SISTEMA ==="', 'Intestazione del report.');
+        add('uptime', 'Mostra da quanto è attivo il sistema e il carico medio.');
+        add('df -h', 'Spazio disco disponibile in formato leggibile.');
+        add('free -h', 'Memoria RAM usata e libera.');
+        add('echo "--- Processi con più CPU ---"', 'Didascalia.');
+        add('ps aux --sort=-%cpu | head -n 6', 'I 5 processi che consumano più CPU.');
+    } else if (type === 'loop') {
+        add(`DIR="${param}"`, 'Cartella da scandire.');
+        add('for file in "$DIR"/*; do', 'Ciclo for su ogni elemento della cartella.');
+        add('    [ -f "$file" ] || continue', 'Salta le voci che non sono file regolari.');
+        add('    echo "Elaboro: $file"', 'Stampa il file in elaborazione.');
+        add('done', 'Chiude il ciclo.');
+    } else if (type === 'userinfo') {
+        add('echo "Utente corrente: $(whoami)"', 'Sostituzione di comando: esegue whoami e ne inserisce l\'output.');
+        add('echo "Home directory: $HOME"', 'Legge la variabile d\'ambiente $HOME.');
+        add('echo "Shell: $SHELL"', 'Shell in uso.');
+        add('echo "Data odierna: $(date)"', 'Data e ora correnti.');
+        add('echo "Kernel: $(uname -r)"', 'Versione del kernel.');
+    } else if (type === 'textprocess') {
+        add(`FILE="${param}"`, 'File di testo o di log da elaborare.');
+        add('grep -i "error" "$FILE" | wc -l', 'Conta le occorrenze della parola "error" (case-insensitive).');
+        add('sed \'s/error/ERRORE/g\' "$FILE" > "${FILE}.bak"', 'Sostituisce "error" con "ERRORE" salvando in un nuovo file.');
+        add('echo "Righe totali: $(wc -l < "$FILE")"', 'Conta il numero di righe del file.');
+    } else if (type === 'args') {
+        add('if [ $# -lt 1 ]; then', 'Controlla che sia stato passato almeno un argomento.');
+        add('    echo "Uso: $0 <nome>"', '$0 è il nome dello script.');
+        add('    exit 1', 'Esce con codice di errore.');
+        add('fi', 'Fine del blocco condizionale.');
+        add('NOME="$1"', 'Salva il primo argomento in una variabile.');
+        add('echo "Ciao, $NOME!"', 'Usa il parametro ricevuto.');
+    }
+
+    if (verbose) {
+        L.push({ code: '', explain: '' });
+        add('echo -e "\\e[32m[DONE]\\e[0m esecuzione completata"', 'Messaggio colorato di chiusura.');
+    }
+
+    const filenameMap = { backup:'backup.sh', monitor:'system_monitor.sh', loop:'batch_loop.sh',
+                          userinfo:'user_report.sh', textprocess:'process_log.sh', args:'saluta.sh' };
+    return { filename: filenameMap[type], lines: L, code: L.map(l => l.code).join('\n') };
+}
+
+function highlight(code) {
+    return escapeHtml(code).split('\n').map(line => {
+        if (line.trim().startsWith('#')) return `<span class="tok-cmt">${line}</span>`;
+        let s = line;
+        s = s.replace(/(#[^"']*)$/, '<span class="tok-cmt">$1</span>');
+        s = s.replace(/("[^"]*"|'[^']*')/g, '<span class="tok-str">$1</span>');
+        s = s.replace(/\b(if|then|else|elif|fi|for|in|do|done|while|case|esac|function|return|exit|continue)\b/g, '<span class="tok-kw">$1</span>');
+        s = s.replace(/(\$\{?\w+\}?|\$\([^)]*\)|\$\d)/g, '<span class="tok-var">$1</span>');
+        s = s.replace(/^(\s*)([a-z_]+)/, (m, sp, cmd) => sp + `<span class="tok-cmd">${cmd}</span>`);
+        return s;
+    }).join('\n');
+}
+
+function generateScript() {
+    const typeSel = document.getElementById('script-type');
+    const labels = { backup:'Cartella da salvare', monitor:'(non usato)', loop:'Cartella da scandire',
+                     userinfo:'(non usato)', textprocess:'File di log', args:'(non usato)' };
+    document.getElementById('param-label').innerText = labels[typeSel.value] || 'Parametro';
+    document.getElementById('script-param').disabled = ['monitor','userinfo','args'].includes(typeSel.value);
+
+    const s = buildScript();
+    document.getElementById('script-filename').innerText = s.filename;
+    document.getElementById('script-output').querySelector('code').innerHTML = highlight(s.code);
+    document.getElementById('script-explanation').innerHTML = s.lines
+        .filter(l => l.explain)
+        .map(l => `<li class="flex gap-3">
+            <span class="font-code text-xs text-emerald-400 bg-slate-900 border border-slate-800 rounded px-2 py-1 h-fit whitespace-pre shrink-0">${escapeHtml(l.code || ' ')}</span>
+            <span class="text-slate-300 text-sm">${escapeHtml(l.explain)}</span>
+        </li>`).join('');
+}
+
+function copyScript() {
+    const code = document.getElementById('script-output').innerText;
+    navigator.clipboard.writeText(code).then(() => flash('Script copiato negli appunti!'));
+}
+function downloadScript() {
+    const code = document.getElementById('script-output').innerText;
+    const name = document.getElementById('script-filename').innerText;
+    const blob = new Blob([code + '\n'], { type: 'text/x-shellscript' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+function saveCurrentScript() {
+    const name = document.getElementById('script-filename').innerText;
+    const code = document.getElementById('script-output').innerText;
+    state.savedScripts.push({ name, code });
+    persist();
+    renderSavedScripts();
+    flash('Script salvato!');
+}
+function renderSavedScripts() {
+    const wrap = document.getElementById('saved-scripts-wrap');
+    const box = document.getElementById('saved-scripts');
+    if (!state.savedScripts.length) { wrap.classList.add('hidden'); return; }
+    wrap.classList.remove('hidden');
+    box.innerHTML = state.savedScripts.map((s, i) => `
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+                <span class="font-code text-xs text-emerald-400">${escapeHtml(s.name)}</span>
+                <div class="flex gap-2">
+                    <button onclick="loadSavedScript(${i})" class="text-slate-400 hover:text-emerald-400 text-xs"><i class="fa-solid fa-eye"></i></button>
+                    <button onclick="deleteSavedScript(${i})" class="text-slate-400 hover:text-rose-400 text-xs"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </div>
+            <pre class="font-code text-[10px] text-slate-400 max-h-24 overflow-hidden whitespace-pre-wrap">${escapeHtml(s.code.slice(0, 180))}${s.code.length > 180 ? '\n…' : ''}</pre>
+        </div>`).join('');
+}
+function loadSavedScript(i) {
+    const s = state.savedScripts[i];
+    switchTab('generator');
+    document.getElementById('script-filename').innerText = s.name;
+    document.getElementById('script-output').querySelector('code').innerHTML = highlight(s.code);
+    document.getElementById('script-explanation').innerHTML = '<li class="text-slate-400 text-sm">Script caricato dai salvati: la spiegazione riga per riga è disponibile rigenerandolo dal modulo.</li>';
+}
+function deleteSavedScript(i) {
+    state.savedScripts.splice(i, 1);
+    persist();
+    renderSavedScripts();
+}
+function flash(msg) {
+    const t = document.createElement('div');
+    t.className = 'fixed bottom-6 right-6 z-50 bg-emerald-500 text-black text-sm font-semibold px-4 py-2.5 rounded-xl shadow-xl';
+    t.innerText = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 1800);
+}
+
+/* =====================================================================
+   SEZIONE 4 — GENERATORE ESERCIZI
+   ===================================================================== */
+const EXERCISES = {
+    'Navigazione & File System': [
+        { diff:'Base', title:'Elenca con dettaglio i nascosti', desc:'Mostra tutti i file della cartella corrente, inclusi i nascosti, in formato lungo.', hint:'Ricorda le opzioni -l e -a di ls.', solution:'ls -la' },
+        { diff:'Base', title:'Dimensioni leggibili', desc:'Elenca i file mostrando le dimensioni in formato human-readable.', hint:'L\'opzione -h rende le dimensioni leggibili.', solution:'ls -lh' },
+        { diff:'Intermedio', title:'Struttura ad albero', desc:'Visualizza la struttura delle cartelle della workspace come un albero.', hint:'Esiste un comando dedicato: tree.', solution:'tree' },
+        { diff:'Avanzato', title:'Percorso assoluto', desc:'Stampa il percorso assoluto della cartella corrente.', hint:'Il comando sta per "print working directory".', solution:'pwd' }
+    ],
+    'Gestione File': [
+        { diff:'Base', title:'Crea un file vuoto', desc:'Crea un file vuoto chiamato note.txt nella cartella corrente.', hint:'Il comando che "tocca" un file.', solution:'touch note.txt' },
+        { diff:'Base', title:'Cartelle annidate', desc:'Crea la struttura progetti/web/assets in un solo comando.', hint:'mkdir con l\'opzione -p.', solution:'mkdir -p progetti/web/assets' },
+        { diff:'Intermedio', title:'Copia e rinomina', desc:'Copia file1.txt in copia.txt.', hint:'Uso: cp origine destinazione.', solution:'cp file1.txt copia.txt' },
+        { diff:'Avanzato', title:'Rimozione ricorsiva', desc:'Rimuovi la cartella vecchia e tutto il suo contenuto.', hint:'rm richiede -r per le directory.', solution:'rm -r vecchia' }
+    ],
+    'Gestione Stringhe & Variabili': [
+        { diff:'Base', title:'Variabile d\'ambiente', desc:'Stampa il valore della variabile che contiene la home directory.', hint:'Si reference con echo $HOME.', solution:'echo $HOME' },
+        { diff:'Base', title:'Confronto in condizione', desc:'Scrivi la condizione per verificare che la variabile $N sia uguale a "admin".', hint:'I blocchi [ ... ] con -eq per numeri, = per stringhe.', solution:'[ "$N" = "admin" ]' },
+        { diff:'Intermedio', title:'Lunghezza stringa', desc:'Ottieni il numero di caratteri contenuti nella variabile $TESTO.', hint:'${#VAR} restituisce la lunghezza.', solution:'echo ${#TESTO}' },
+        { diff:'Avanzato', title:'Sostituzione parametri', desc:'Stampa $NOME usando un valore di default "ospite" se non è impostata.', hint:'Sintassi ${VAR:-default}.', solution:'echo ${NOME:-ospite}' }
+    ],
+    'Condizioni & Cicli': [
+        { diff:'Base', title:'Test directory', desc:'Verifica che il percorso /etc sia una directory.', hint:'-d testa se è una directory.', solution:'[ -d /etc ]' },
+        { diff:'Intermedio', title:'Ciclo for', desc:'Scrivi un ciclo che stampa i numeri da 1 a 5.', hint:'for i in {1..5}; do echo $i; done', solution:'for i in {1..5}; do echo $i; done' },
+        { diff:'Intermedio', title:'File regolare o no', desc:'Verifica che $F sia un file regolare esistente.', hint:'Combina -f con -e.', solution:'[ -f "$F" ]' },
+        { diff:'Avanzato', title:'Ciclo su file', desc:'Scrivi un ciclo che elabora ogni file .txt della cartella corrente.', hint:'for f in *.txt; do ... done', solution:'for f in *.txt; do echo "$f"; done' }
+    ],
+    'Filtri & Pipeline': [
+        { diff:'Base', title:'Cerca una parola', desc:'Trova nel file log.txt le righe che contengono ERROR.', hint:'grep PATTERN FILE.', solution:'grep ERROR log.txt' },
+        { diff:'Base', title:'Prima riga', desc:'Mostra solo le prime 3 righe di file1.txt.', hint:'head -n NUMERO FILE.', solution:'head -n 3 file1.txt' },
+        { diff:'Intermedio', title:'Conta gli errori', desc:'Conta quante righe di log.txt contengono ERROR usando una pipeline.', hint:'grep ERROR log.txt | wc -l', solution:'grep ERROR log.txt | wc -l' },
+        { diff:'Avanzato', title:'Ordina e rimuovi duplicati', desc:'Ordina alfabeticamente le righe di un file ed elimina i duplicati.', hint:'Combina sort con uniq.', solution:'sort file.txt | uniq' }
+    ],
+    'Informazioni di Sistema': [
+        { diff:'Base', title:'Utente corrente', desc:'Scopri con quale utente sei collegato.', hint:'Comando di 6 lettere.', solution:'whoami' },
+        { diff:'Base', title:'Info kernel', desc:'Mostra tutte le informazioni sul kernel e sul sistema.', hint:'uname con opzione -a.', solution:'uname -a' },
+        { diff:'Intermedio', title:'Report di stato', desc:'Scrivi un comando che mostra uptime e uso del disco in un unico report.', hint:'Combina uptime e df -h.', solution:'uptime && df -h' },
+        { diff:'Avanzato', title:'Permessi eseguibili', desc:'Rendi eseguibile lo script myscript.sh.', hint:'chmod con +x.', solution:'chmod +x myscript.sh' }
+    ]
+};
+
+let currentExercise = null;
+function initExerciseFilters() {
+    const sel = document.getElementById('ex-filter-topic');
+    sel.innerHTML = '<option value="any">Qualsiasi argomento</option>' +
+        Object.keys(EXERCISES).map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
+}
+function generateNewExercise() {
+    const topicFilter = document.getElementById('ex-filter-topic').value;
+    const diffFilter = document.getElementById('ex-filter-diff').value;
+    let pool = [];
+    Object.keys(EXERCISES).forEach(topic => {
+        if (topicFilter !== 'any' && topic !== topicFilter) return;
+        EXERCISES[topic].forEach(ex => {
+            if (diffFilter !== 'any' && ex.diff !== diffFilter) return;
+            pool.push(Object.assign({ topic }, ex));
+        });
+    });
+    const card = document.getElementById('ex-card');
+    const empty = document.getElementById('ex-empty');
+    if (!pool.length) {
+        card.classList.add('hidden');
+        empty.classList.remove('hidden');
+        empty.innerHTML = 'Nessun esercizio trovato per questi filtri. Prova a cambiare argomento o difficoltà.';
+        return;
+    }
+    let pick = pool[Math.floor(Math.random() * pool.length)];
+    if (currentExercise && pool.length > 1) {
+        let guard = 0;
+        while (pick.title === currentExercise.title && guard++ < 10) {
+            pick = pool[Math.floor(Math.random() * pool.length)];
+        }
+    }
+    currentExercise = pick;
+    empty.classList.add('hidden');
+    card.classList.remove('hidden'); void card.offsetWidth; card.classList.add('fade-in');
+    document.getElementById('ex-topic').innerText = pick.topic;
+    document.getElementById('ex-diff').innerText = pick.diff;
+    document.getElementById('ex-title').innerText = pick.title;
+    document.getElementById('ex-desc').innerHTML = pick.desc;
+    document.getElementById('ex-hint').innerText = pick.hint;
+    document.getElementById('ex-solution').innerText = pick.solution;
+    document.getElementById('ex-solution').classList.add('hidden');
+    document.getElementById('ex-solution-btn').innerText = 'Mostra soluzione';
+    persistLastExercise();
+}
+function toggleExerciseSolution() {
+    const pre = document.getElementById('ex-solution');
+    const btn = document.getElementById('ex-solution-btn');
+    pre.classList.toggle('hidden');
+    btn.innerText = pre.classList.contains('hidden') ? 'Mostra soluzione' : 'Nascondi soluzione';
+}
+function persistLastExercise() { /* estensibile: salvataggio ultimo esercizio */ }
+
+/* =====================================================================
+   SEZIONE 5 — QUIZ A RISPOSTA MULTIPLA
+   ===================================================================== */
+const QUIZ_BANK = [
+    /* Navigazione & File System */
+    { topic:'Navigazione & File System', diff:'Base', q:'Quale comando mostra il percorso della directory corrente?', options:['pwd','ls','cd','dir'], answer:0 },
+    { topic:'Navigazione & File System', diff:'Base', q:'Quale opzione di ls mostra anche i file nascosti?', options:['-a','-l','-h','-R'], answer:0 },
+    { topic:'Navigazione & File System', diff:'Base', q:'Come si risale alla directory superiore?', options:['cd ..','cd ~','cd /','cd -'], answer:0 },
+    { topic:'Navigazione & File System', diff:'Base', q:'Dove porta il comando cd ~ ?', options:['Alla propria home','Alla radice /','Alla directory precedente','A /tmp'], answer:0 },
+    { topic:'Navigazione & File System', diff:'Intermedio', q:'Cosa aggiunge l\'opzione -h a ls -l ?', options:['Dimensioni leggibili (K, M, G)','Mostra i file nascosti','Ordina per data','Ricorsione'], answer:0 },
+    /* Gestione File */
+    { topic:'Gestione File', diff:'Base', q:'Quale comando crea una cartella?', options:['mkdir','touch','cp','rm'], answer:0 },
+    { topic:'Gestione File', diff:'Intermedio', q:'Quale opzione di mkdir crea anche i livelli intermedi mancanti?', options:['-p','-r','-a','-m'], answer:0 },
+    { topic:'Gestione File', diff:'Base', q:'Quale comando crea un file vuoto?', options:['touch','mkdir','nano','cp'], answer:0 },
+    { topic:'Gestione File', diff:'Intermedio', q:'Quale opzione di rm serve per rimuovere una directory con il suo contenuto?', options:['-r','-f','-a','-d'], answer:0 },
+    { topic:'Gestione File', diff:'Base', q:'Cosa fa il comando cp a.txt b.txt ?', options:['Copia a.txt in b.txt','Sposta a.txt in b.txt','Rinomina solo a.txt','Elimina b.txt'], answer:0 },
+    /* Stringhe & Variabili */
+    { topic:'Gestione Stringhe & Variabili', diff:'Base', q:'Quale sintassi espande il valore della variabile NOME?', options:['$NOME','NOME','#NOME','&NOME'], answer:0 },
+    { topic:'Gestione Stringhe & Variabili', diff:'Base', q:'Cosa stampa echo $HOME ?', options:['Il percorso della propria home','La shell corrente','Il nome utente','La CPU'], answer:0 },
+    { topic:'Gestione Stringhe & Variabili', diff:'Intermedio', q:'Cosa restituisce ${#TESTO} ?', options:['La lunghezza della stringa','Il primo carattere','Il testo in maiuscolo','Un errore'], answer:0 },
+    { topic:'Gestione Stringhe & Variabili', diff:'Avanzato', q:'Cosa fa ${VAR:-default} ?', options:['Usa "default" se VAR non è impostata','Elimina VAR','Rinomina VAR','Rende VAR di sola lettura'], answer:0 },
+    /* Condizioni & Cicli */
+    { topic:'Condizioni & Cicli', diff:'Intermedio', q:'Nella sintassi dei test, cosa verifica -d ?', options:['Che il percorso sia una directory','Che esista un file','Che un file sia eseguibile','Che la stringa sia vuota'], answer:0 },
+    { topic:'Condizioni & Cicli', diff:'Base', q:'Quale costrutto ripete un blocco su una lista di valori?', options:['for ... do ... done','if ... fi','case ... esac','return'], answer:0 },
+    { topic:'Condizioni & Cicli', diff:'Base', q:'Quale parola chiude un ciclo for?', options:['done','fi','end','esac'], answer:0 },
+    { topic:'Condizioni & Cicli', diff:'Intermedio', q:'Cosa verifica il test [ -f "$F" ] ?', options:['Che $F sia un file regolare','Che $F sia una directory','Che $F sia leggibile','Che $F sia vuoto'], answer:0 },
+    /* Filtri & Pipeline */
+    { topic:'Filtri & Pipeline', diff:'Base', q:'Quale comando cerca un testo dentro un file?', options:['grep','find','cat','sed'], answer:0 },
+    { topic:'Filtri & Pipeline', diff:'Intermedio', q:'Cosa fa il carattere pipe | ?', options:['Passa l\'output a un altro comando','Reindirizza su file','Esegue in background','Commenta la riga'], answer:0 },
+    { topic:'Filtri & Pipeline', diff:'Base', q:'Cosa mostra head -n 3 file.txt ?', options:['Le prime 3 righe','Le ultime 3 righe','3 file','Il terzo carattere'], answer:0 },
+    { topic:'Filtri & Pipeline', diff:'Intermedio', q:'Cosa conta wc -l file.txt ?', options:['Le righe','Le parole','I byte','I file'], answer:0 },
+    { topic:'Filtri & Pipeline', diff:'Avanzato', q:'Cosa produce sort file.txt | uniq ?', options:['Righe ordinate e senza duplicati consecutivi','Solo le righe duplicate','Il file compresso','Le righe in ordine inverso'], answer:0 },
+    /* Informazioni di Sistema */
+    { topic:'Informazioni di Sistema', diff:'Base', q:'Cosa mostra il comando whoami ?', options:['L\'utente corrente','La macchina','La data','La home'], answer:0 },
+    { topic:'Informazioni di Sistema', diff:'Base', q:'Cosa mostra uname -a ?', options:['Informazioni su kernel e sistema','Lo spazio disco','La memoria RAM','I processi'], answer:0 },
+    { topic:'Informazioni di Sistema', diff:'Intermedio', q:'Cosa fa chmod +x script.sh ?', options:['Rende lo script eseguibile','Lo copia','Lo esegue subito','Lo elimina'], answer:0 },
+    { topic:'Informazioni di Sistema', diff:'Intermedio', q:'Cosa mostra df -h ?', options:['Lo spazio libero su disco, leggibile','Le directory','I file aperti','Le variabili d\'ambiente'], answer:0 },
+    { topic:'Informazioni di Sistema', diff:'Base', q:'Cosa indica uptime ?', options:['Da quanto è attivo il sistema','La data','L\'utente','Il nome host'], answer:0 },
+{"topic": "Shell, Terminal e Bash", "diff": "Base", "q": "Quale affermazione descrive correttamente Bash?", "options": ["Bash è la shell più diffusa negli ambienti Unix/Linux/macOS", "Bash è interfaccia grafica", "Solo su Windows senza WSL", "Editor da terminale"], "answer": 0},
+{"topic": "Shell, Terminal e Bash", "diff": "Base", "q": "Differenza principale tra Terminal e Shell?", "options": ["Terminal è interfaccia che interagisce con Shell", "Shell è interfaccia grafica", "Stessa cosa", "Solo Python"], "answer": 0},
+{"topic": "Bash su Windows (Git Bash e WSL)", "diff": "Base", "q": "Dove sono file disco C in WSL?", "options": ["/mnt/c", "/windows/c", "/c", "/disk/c"], "answer": 0},
+{"topic": "Bash su Windows (Git Bash e WSL)", "diff": "Base", "q": "Comando per installare WSL?", "options": ["wsl --install", "install-wsl", "wsl-install", "bash --wsl"], "answer": 0},
+{"topic": "Hola mundo: il comando echo", "diff": "Base", "q": "Comando per stampare 'Hola Bash'?", "options": ["echo \"Hola Bash\"", "print \"Hola Bash\"", "console.log", "printf Hola Bash"], "answer": 0},
+{"topic": "Hola mundo: il comando echo", "diff": "Base", "q": "Variabile che mostra nome shell in uso?", "options": ["$0", "$SHELLPATH", "$SHELLNAME", "$TERM"], "answer": 0},
+{"topic": "Comandi di orientamento: pwd e ls", "diff": "Base", "q": "Comando per mostrare directory corrente?", "options": ["pwd", "ls", "cd", "dir"], "answer": 0},
+{"topic": "Comandi di orientamento: pwd e ls", "diff": "Base", "q": "Opzione ls per file nascosti?", "options": ["ls -a", "ls -l", "ls -h", "ls -r"], "answer": 0},
+{"topic": "Comandi di orientamento: pwd e ls", "diff": "Base", "q": "Cosa mostra ls -lh?", "options": ["Dimensioni in formato leggibile", "Solo nomi", "Nasconde nascosti", "Solo directory"], "answer": 0},
+{"topic": "Comandi di navigazione: cd", "diff": "Base", "q": "Comando per salire di un livello?", "options": ["cd ..", "cd .", "cd ~", "cd /"], "answer": 0},
+{"topic": "Comandi di navigazione: cd", "diff": "Base", "q": "Comando per andare in home?", "options": ["cd ~", "cd /home", "cd ..", "cd ."], "answer": 0},
+{"topic": "Percorso assoluto e relativo", "diff": "Intermedio", "q": "Come riconoscere percorso assoluto?", "options": ["Inizia con /", "Inizia con .", "Inizia con ~", "Nessuna barra"], "answer": 0},
+{"topic": "Altri comandi di base (sistema e info)", "diff": "Base", "q": "Comando per data/ora?", "options": ["date", "time", "cal", "clock"], "answer": 0},
+{"topic": "Altri comandi di base (sistema e info)", "diff": "Base", "q": "Comando per pulire schermo?", "options": ["clear", "clean", "cls", "reset"], "answer": 0},
+{"topic": "Anatomia del comando", "diff": "Base", "q": "Ordine corretto struttura comando?", "options": ["comando [opzioni] [argomenti]", "[opzioni] comando", "[argomenti] comando", "comando [argomenti] [opzioni]"], "answer": 0},
+{"topic": "Aiuto e documentazione: help e man", "diff": "Base", "q": "Come uscire da man?", "options": ["q", "ESC", "CTRL+C", "x"], "answer": 0},
+{"topic": "Aiuto e documentazione: help e man", "diff": "Base", "q": "Comando per aprire manuale ls?", "options": ["man ls", "help ls", "ls --manual", "doc ls"], "answer": 0},
+{"topic": "AI e terminale: perché è importante imparare Bash", "diff": "Base", "q": "Perché imparare Bash anche con IA?", "options": ["Per capire e controllare azioni agenti IA", "IA non può eseguire comandi", "Per evitare terminale", "Sostituire IA"], "answer": 0},
+{"topic": "Sistema di file Unix", "diff": "Base", "q": "Quale direttorio contiene i file di configurazione del sistema?", "options": ["/etc", "/bin", "/tmp", "/home"], "answer": 0},
+{"topic": "Sistema di file Unix", "diff": "Base", "q": "Quale direttorio è destinato ai file temporanei?", "options": ["/tmp", "/var", "/etc", "/usr"], "answer": 0},
+{"topic": "Sistema di file Unix", "diff": "Base", "q": "Dove si trovano normalmente i direttori personali degli utenti?", "options": ["/home", "/etc", "/opt", "/bin"], "answer": 0},
+{"topic": "Sistema di file Unix", "diff": "Base", "q": "Quale direttorio contiene i programmi di base del sistema?", "options": ["/bin", "/tmp", "/home", "/var"], "answer": 0},
+{"topic": "Sistema di file Unix", "diff": "Intermedio", "q": "A cosa serve il direttorio /opt nei sistemi Unix?", "options": ["Al software aggiuntivo/opzionale installato nel sistema", "Ai file temporanei", "Ai direttori personali degli utenti", "Ai log e alle code di messaggi"], "answer": 0},
+{"topic": "Manipolazione di file e direttori", "diff": "Base", "q": "Quale comando crea un nuovo direttorio?", "options": ["mkdir", "touch", "rmdir", "cp"], "answer": 0},
+{"topic": "Manipolazione di file e direttori", "diff": "Base", "q": "Quale comando crea un file vuoto?", "options": ["touch", "mkdir", "rm", "mv"], "answer": 0},
+{"topic": "Manipolazione di file e direttori", "diff": "Base", "q": "Quale comando copia un file o un direttorio?", "options": ["cp", "mv", "rm", "ls"], "answer": 0},
+{"topic": "Manipolazione di file e direttori", "diff": "Intermedio", "q": "Perché `cp curso encurso` fallisce se `curso` è un direttorio con contenuto?", "options": ["Perché per copiare un direttorio serve un'opzione ricorsiva come -r o -a", "Perché il direttorio di destinazione non esiste", "Perché serve sempre eseguirlo come superutente", "Perché cp copia solo i file nascosti"], "answer": 0},
+{"topic": "Manipolazione di file e direttori", "diff": "Intermedio", "q": "Quale opzione di cp copia in modo esatto preservando permessi, proprietari, timestamp e link simbolici?", "options": ["-a", "-r", "-f", "-n"], "answer": 0},
+{"topic": "Manipolazione di file e direttori", "diff": "Intermedio", "q": "Quale comando sposta o rinomina un file o un direttorio?", "options": ["mv", "cp", "rm", "tree"], "answer": 0},
+{"topic": "Manipolazione di file e direttori", "diff": "Intermedio", "q": "Quale comando rinomina archivo.txt in nuevo.txt?", "options": ["mv archivo.txt nuevo.txt", "cp archivo.txt nuevo.txt", "rm archivo.txt nuevo.txt", "mkdir archivo.txt nuevo.txt"], "answer": 0},
+{"topic": "Manipolazione di file e direttori", "diff": "Base", "q": "Quale comando elimina un file?", "options": ["rm", "rmdir", "mkdir", "cp"], "answer": 0},
+{"topic": "Manipolazione di file e direttori", "diff": "Intermedio", "q": "Cosa accade eseguendo `rm curso` se `curso` è un direttorio?", "options": ["Bash non lo elimina e chiede di usare l'opzione ricorsiva -r", "Elimina il direttorio e tutto il suo contenuto", "Elimina solo i file vuoti al suo interno", "Sposta il direttorio nel cestino"], "answer": 0},
+{"topic": "Manipolazione di file e direttori", "diff": "Avanzato", "q": "Quale opzione di rm elimina ricorsivamente chiedendo conferma per ogni elemento?", "options": ["-ri", "-rf", "-a", "-l"], "answer": 0},
+{"topic": "Manipolazione di file e direttori", "diff": "Avanzato", "q": "Perché `rm -rf` è particolarmente pericoloso?", "options": ["Elimina tutto in modo ricorsivo e forzato, senza chiedere conferma e senza passare dal cestino", "Elimina solo i file di sistema", "Rende i file di sola lettura", "Sposta i file nel cestino in modo permanente"], "answer": 0},
+{"topic": "Wildcard (caratteri jolly)", "diff": "Intermedio", "q": "Cosa rappresenta il carattere jolly `*`?", "options": ["Zero o più caratteri", "Esattamente un carattere", "Esattamente cinque caratteri", "Solo i file nascosti"], "answer": 0},
+{"topic": "Wildcard (caratteri jolly)", "diff": "Intermedio", "q": "Cosa rappresenta il carattere jolly `?`?", "options": ["Esattamente un carattere", "Zero o più caratteri", "Qualsiasi sequenza di caratteri", "Un direttorio"], "answer": 0},
+{"topic": "Wildcard (caratteri jolly)", "diff": "Intermedio", "q": "Quale comando elenca tutti i file con estensione .md?", "options": ["ls *.md", "ls ?.md", "ls .md", "ls md*"], "answer": 0},
+{"topic": "Wildcard (caratteri jolly)", "diff": "Avanzato", "q": "Cosa seleziona `ls ?????*`?", "options": ["I file con nome di almeno 5 caratteri", "Esattamente 5 file del direttorio", "I file che iniziano per 5", "I file nascosti con 5 caratteri"], "answer": 0},
+{"topic": "Wildcard (caratteri jolly)", "diff": "Intermedio", "q": "Come si eliminano tutti i file con estensione .txt del direttorio attuale usando un carattere jolly?", "options": ["rm *.txt", "rm ?.txt", "rm .txt", "rm -r .txt"], "answer": 0},
+{"topic": "Listati avanzati: tree e find", "diff": "Intermedio", "q": "Cosa mostra il comando tree?", "options": ["Un albero gerarchico di direttori e file", "L'elenco dei processi in esecuzione", "I permessi dei file", "La cronologia dei comandi"], "answer": 0},
+{"topic": "Listati avanzati: tree e find", "diff": "Base", "q": "Il comando tree è installato di default in tutti i sistemi Unix?", "options": ["No, va installato con il gestore di pacchetti (apt su Linux, brew su macOS)", "Sì, è sempre presente in Bash", "Sì, ma solo su macOS", "No, non esiste su Linux"], "answer": 0},
+{"topic": "Listati avanzati: tree e find", "diff": "Intermedio", "q": "Quale opzione di tree mostra anche i file e i direttori nascosti?", "options": ["-a", "-h", "-L", "-r"], "answer": 0},
+{"topic": "Listati avanzati: tree e find", "diff": "Intermedio", "q": "Quale comando cerca un file per nome nel direttorio attuale?", "options": ["find . -name \"README.md\"", "grep README.md", "tree README.md", "ls -name README.md"], "answer": 0},
+{"topic": "Listati avanzati: tree e find", "diff": "Avanzato", "q": "Come si cercano con find tutti i file il cui nome inizia per R?", "options": ["find . -name \"R*\"", "find . -name R", "find -r .", "find . R"], "answer": 0},
+{"topic": "Listati avanzati: tree e find", "diff": "Base", "q": "Quale comando elimina un direttorio vuoto?", "options": ["rmdir", "rm -rf", "mkdir", "touch"], "answer": 0},
+{"topic": "Estensioni dei file", "diff": "Intermedio", "q": "Perché è importante indicare l'estensione quando si copia o rinomina un file?", "options": ["Perché alcuni sistemi nascondono l'estensione e il file copiato potrebbe risultare di un tipo diverso", "Perché altrimenti il file diventa di sola lettura", "Perché Bash cancella i file senza estensione", "Perché l'estensione determina i permessi del file"], "answer": 0},
+{"topic": "Il sistema di file Unix", "diff": "Base", "q": "Come si può ottenere rapidamente il percorso assoluto di un direttorio nel terminale?", "options": ["Trascinando il direttorio nella finestra del terminale", "Premendo Ctrl+P", "Eseguendo rm sul direttorio", "Scrivendo tree"], "answer": 0},
+{"topic": "Permessi", "diff": "Base", "q": "A quali valori numerici corrispondono i permessi di lettura, scrittura ed esecuzione?", "options": ["4, 2, 1", "1, 2, 4", "2, 4, 1", "3, 2, 1"], "answer": 0},
+{"topic": "Permessi", "diff": "Base", "q": "Cosa significa il permesso 644 in notazione ottale?", "options": ["rw- per il proprietario, r-- per gruppo e altri", "rwx per tutti gli utenti", "rwx per il proprietario e nulla per gli altri", "r-- per tutti gli utenti"], "answer": 0},
+{"topic": "Permessi", "diff": "Base", "q": "Cosa significa il permesso 755 in notazione ottale?", "options": ["rwx per il proprietario, r-x per gruppo e altri", "rw- per il proprietario, r-- per gruppo e altri", "rwx per tutti gli utenti", "r-- per il proprietario e rwx per gli altri"], "answer": 0},
+{"topic": "Permessi", "diff": "Intermedio", "q": "Quale comando imposta i permessi di un file in modo ottale?", "options": ["chmod 755 archivo", "chown 755 archivo", "chgrp 755 archivo", "umask 755 archivo"], "answer": 0},
+{"topic": "Permessi", "diff": "Intermedio", "q": "Nel comando chmod u+x archivo, cosa indica la lettera u?", "options": ["il proprietario (utente)", "il gruppo", "gli altri utenti", "tutti gli utenti"], "answer": 0},
+{"topic": "Permessi", "diff": "Intermedio", "q": "Quale comando cambia il proprietario di un file?", "options": ["chown usuario archivo", "chmod usuario archivo", "chgrp usuario archivo", "umask usuario archivo"], "answer": 0},
+{"topic": "Permessi", "diff": "Avanzato", "q": "Cosa fa il comando chgrp grupo archivo?", "options": ["cambia il gruppo proprietario del file", "cambia il proprietario del file", "modifica i permessi in modo ottale", "mostra i permessi del file"], "answer": 0},
+{"topic": "Permessi", "diff": "Intermedio", "q": "In chmod u-x archivo, cosa succede?", "options": ["si rimuove il permesso di esecuzione al proprietario", "si aggiunge il permesso di esecuzione al proprietario", "si rimuove il permesso all'intero gruppo", "si concede l'esecuzione a tutti"], "answer": 0},
+{"topic": "umask", "diff": "Avanzato", "q": "Con umask 022, quali permessi avrà un nuovo file?", "options": ["644 (rw-r--r--)", "755 (rwxr-xr-x)", "666 (rw-rw-rw-)", "777 (rwxrwxrwx)"], "answer": 0},
+{"topic": "umask", "diff": "Avanzato", "q": "Con umask 022, quali permessi avrà una nuova directory?", "options": ["755 (rwxr-xr-x)", "644 (rw-r--r--)", "700 (rwx------)", "777 (rwxrwxrwx)"], "answer": 0},
+{"topic": "umask", "diff": "Intermedio", "q": "Cosa mostra il comando umask senza argomenti?", "options": ["la maschera dei permessi predefinita", "i permessi del file corrente", "l'elenco degli utenti del sistema", "la cronologia dei comandi"], "answer": 0},
+{"topic": "sudo", "diff": "Base", "q": "A cosa serve il comando sudo?", "options": ["a eseguire un comando con privilegi di amministratore", "a cambiare i permessi di un file", "a elencare i processi attivi", "a creare un alias"], "answer": 0},
+{"topic": "sudo", "diff": "Intermedio", "q": "Quale comando apre una sessione come un altro utente caricandone l'ambiente?", "options": ["su - usuario", "sudo usuario", "chown usuario", "login usuario"], "answer": 0},
+{"topic": "Processi", "diff": "Base", "q": "Quale comando mostra tutti i processi in esecuzione del sistema?", "options": ["ps aux", "df -h", "free -h", "history"], "answer": 0},
+{"topic": "Processi", "diff": "Intermedio", "q": "Cosa mostra htop rispetto a top?", "options": ["una versione migliorata e più leggibile del monitor dei processi", "solo i processi dell'utente root", "la memoria libera del sistema", "la cronologia dei processi terminati"], "answer": 0},
+{"topic": "Processi", "diff": "Base", "q": "Cosa identifica il PID di un processo?", "options": ["l'identificatore unico del processo", "la priorità del processo", "il proprietario del processo", "il tempo di esecuzione del processo"], "answer": 0},
+{"topic": "Processi", "diff": "Intermedio", "q": "Quale comando forza la terminazione di un processo?", "options": ["kill -9 PID", "kill -1 PID", "kill -p PID", "jobs -9 PID"], "answer": 0},
+{"topic": "Jobs", "diff": "Intermedio", "q": "Cosa fa Ctrl+Z su un processo in esecuzione?", "options": ["lo sospende", "lo termina definitivamente", "lo porta in secondo piano", "lo riavvia"], "answer": 0},
+{"topic": "Jobs", "diff": "Intermedio", "q": "Cosa fa il comando bg %1?", "options": ["riprende il lavoro 1 in secondo piano", "porta il lavoro 1 in primo piano", "termina il lavoro 1", "mostra l'elenco dei lavori"], "answer": 0},
+{"topic": "Jobs", "diff": "Intermedio", "q": "Cosa fa il comando fg %1?", "options": ["porta il lavoro 1 in primo piano", "lo sospende", "lo elimina definitivamente", "lo rinvia in secondo piano"], "answer": 0},
+{"topic": "Cronologia", "diff": "Base", "q": "Cosa fa !! nella shell?", "options": ["ripete l'ultimo comando eseguito", "mostra la cronologia completa", "cancella la cronologia", "esegue il comando numero 2"], "answer": 0},
+{"topic": "Cronologia", "diff": "Intermedio", "q": "Cosa fa il comando history -c?", "options": ["svuota la cronologia dei comandi", "mostra gli ultimi 10 comandi", "ripete il comando precedente", "salva la cronologia su file"], "answer": 0},
+{"topic": "Cronologia", "diff": "Intermedio", "q": "Cosa esegue !ls?", "options": ["l'ultimo comando della cronologia che inizia con ls", "tutti i comandi che contengono ls", "cancella i comandi che contengono ls", "elenca i file della directory"], "answer": 0},
+{"topic": "Alias", "diff": "Base", "q": "Cosa crea il comando alias ll='ls -l'?", "options": ["una scorciatoia ll che esegue ls -l", "un file chiamato ll", "un utente chiamato ll", "una variabile d'ambiente"], "answer": 0},
+{"topic": "Alias", "diff": "Base", "q": "Quale comando rimuove un alias?", "options": ["unalias ll", "rmalias ll", "delalias ll", "alias -d ll"], "answer": 0},
+{"topic": "nano", "diff": "Base", "q": "Quale scorciatoia salva le modifiche in nano?", "options": ["Ctrl+O", "Ctrl+X", "Ctrl+W", "Ctrl+K"], "answer": 0},
+{"topic": "nano", "diff": "Base", "q": "Quale scorciatoia esce da nano?", "options": ["Ctrl+X", "Ctrl+O", "Ctrl+G", "Ctrl+U"], "answer": 0},
+{"topic": "vim", "diff": "Base", "q": "Quale comando salva ed esce da vim?", "options": [":wq", ":q!", ":w", "dd"], "answer": 0},
+{"topic": "vim", "diff": "Intermedio", "q": "Quale tasto attiva la modalità inserimento in vim?", "options": ["i", "Esc", "dd", ":w"], "answer": 0},
+{"topic": "vim", "diff": "Intermedio", "q": "Cosa fa dd in vim?", "options": ["cancella la riga corrente", "duplica la riga corrente", "salva il file", "esce dall'editor"], "answer": 0},
+{"topic": "vim", "diff": "Base", "q": "Come si esce da vim senza salvare?", "options": [":q!", ":wq", ":x", ":e"], "answer": 0},
+{"topic": "Lettura dei file", "diff": "Base", "q": "Quale comando mostra le prime 10 righe di un file per impostazione predefinita?", "options": ["head", "tail", "wc", "cat"], "answer": 0},
+{"topic": "Lettura dei file", "diff": "Intermedio", "q": "A cosa serve tail -f file.log?", "options": ["a seguire un file di log mentre cresce in tempo reale", "a contare le righe del file", "a cercare una parola nel file", "a cancellare il file"], "answer": 0},
+{"topic": "Ricerca e conteggio", "diff": "Base", "q": "Quale comando conta righe, parole e byte di un file?", "options": ["wc", "grep", "find", "sort"], "answer": 0},
+{"topic": "Ricerca e conteggio", "diff": "Intermedio", "q": "Cosa fa l'opzione -i di grep?", "options": ["cerca ignorando maiuscole e minuscole", "cerca solo nelle directory", "inverte l'ordine delle righe", "conta le occorrenze"], "answer": 0},
+{"topic": "Redirezioni", "diff": "Intermedio", "q": "Qual è la differenza tra > e >> ?", "options": ["> sovrascrive il file, >> aggiunge in fondo", "> aggiunge in fondo, >> sovrascrive il file", "sono identici", "> crea una directory"], "answer": 0},
+{"topic": "Variabili d'ambiente", "diff": "Intermedio", "q": "Cosa fa il comando export in Bash?", "options": ["rende la variabile disponibile ai processi figli della sessione", "cancella la variabile", "stampa il valore della variabile", "crea un alias"], "answer": 0},
+{"topic": "Script Bash", "diff": "Base", "q": "Cosa indica la riga #!/bin/bash all'inizio di uno script?", "options": ["Indica l'interprete da usare per eseguire lo script", "Indica che è un file di testo normale", "Specifica la data di creazione", "Indica il proprietario del file"], "answer": 0},
+{"topic": "Script Bash", "diff": "Base", "q": "Quale comando esegue uno script senza renderlo eseguibile?", "options": ["bash script.sh", "chmod script.sh", "run script.sh", "exec script.sh"], "answer": 0},
+{"topic": "Script Bash", "diff": "Base", "q": "Per rendere eseguibile uno script, quale comando si usa?", "options": ["chmod +x script.sh", "chmod rw script.sh", "chown x script.sh", "perm script.sh"], "answer": 0},
+{"topic": "Script Bash", "diff": "Base", "q": "Dopo aver reso eseguibile script.sh, come lo si lancia dalla directory corrente?", "options": ["./script.sh", "script.sh", "bash ./script.sh --run", "/script.sh"], "answer": 0},
+{"topic": "Script Bash", "diff": "Base", "q": "Quale variabile contiene il nome dello script?", "options": ["$0", "$1", "$#", "$@"], "answer": 0},
+{"topic": "Script Bash", "diff": "Base", "q": "Quale variabile contiene il numero totale di argomenti passati?", "options": ["$#", "$@", "$*", "$?"], "answer": 0},
+{"topic": "Script Bash", "diff": "Base", "q": "Quale variabile contiene il codice di uscita dell'ultimo comando?", "options": ["$?", "$0", "$1", "$#"], "answer": 0},
+{"topic": "read", "diff": "Base", "q": "Come si legge un input mostrando un prompt sulla stessa riga?", "options": ["read -p \"Nome: \" nome", "read --show \"Nome: \" nome", "echo \"Nome: \" | read nome", "input \"Nome: \" nome"], "answer": 0},
+{"topic": "read", "diff": "Base", "q": "Come si legge una password senza visualizzarla sul terminale?", "options": ["read -s password", "read -h password", "read --hide password", "read -q password"], "answer": 0},
+{"topic": "Sostituzione comandi", "diff": "Base", "q": "Quale sintassi è corretta per sostituire un comando con il suo output?", "options": ["$(pwd)", "`pwd`", "$(pwd", "$[pwd]"], "answer": 0},
+{"topic": "Quoting", "diff": "Base", "q": "Per preservare spazi e evitare espansioni indesiderate, è meglio usare:", "options": ["Virgolette doppie \"...\" quando serve espansione, virgolette singole '...' per evitare espansione", "Solo apici singoli sempre", "Solo apici doppi sempre", "Nessuna differenza tra virgolette"], "answer": 0},
+{"topic": "echo/printf", "diff": "Base", "q": "Rispetto a echo, printf è preferibile quando:", "options": ["Si vuole un controllo preciso del formato (es. spazi, newlines)", "Si vuole solo stampare una riga veloce", "Non c'è differenza", "Funziona solo in C"], "answer": 0},
+{"topic": "Argomenti", "diff": "Base", "q": "Quale tra le seguenti variabili include TUTTI gli argomenti passati?", "options": ["$@", "$0", "$1", "$$"], "answer": 0},
+{"topic": "Script", "diff": "Base", "q": "Se un comando fallisce in uno script, cosa ci permette di verificare?", "options": ["Il valore di $?", "Il valore di $#", "Il valore di $0", "Il valore di $@ "], "answer": 0},
+{"topic": "Condizioni & Cicli", "diff": "Base", "q": "Come si chiude un blocco condizionale if in Bash?", "options": ["fi", "end", "done", "esac"], "answer": 0},
+{"topic": "Condizioni & Cicli", "diff": "Base", "q": "Quale operatore di test verifica che un numero sia maggiore o uguale a un altro?", "options": ["-ge", "-gt", "-eq", "-le"], "answer": 0},
+{"topic": "Condizioni & Cicli", "diff": "Base", "q": "Cosa fa la clausola elif in un condizionale?", "options": ["Verifica una nuova condizione se la precedente risulta falsa", "Interrompe immediatamente lo script", "Ripete il blocco precedente", "Definisce una funzione interna"], "answer": 0},
+{"topic": "Condizioni & Cicli", "diff": "Base", "q": "Cosa succede appena una condizione di if/elif risulta vera?", "options": ["Bash esegue quel ramo e ignora tutti i rami successivi", "Bash continua a testare anche tutti gli altri rami", "Bash esegue il ramo else", "Bash termina lo script"], "answer": 0},
+{"topic": "Condizioni & Cicli", "diff": "Intermedio", "q": "Quale struttura e piu adatta quando si confronta la stessa variabile con piu valori fissi?", "options": ["case", "for", "while", "return"], "answer": 0},
+{"topic": "Condizioni & Cicli", "diff": "Intermedio", "q": "Come si chiude un blocco case?", "options": ["esac", "fi", "done", "end"], "answer": 0},
+{"topic": "Condizioni & Cicli", "diff": "Intermedio", "q": "In un case, quale pattern rappresenta il caso di default?", "options": ["*", "-", "#", "default"], "answer": 0},
+{"topic": "Condizioni & Cicli", "diff": "Base", "q": "Quale operatore verifica che una stringa sia vuota?", "options": ["-z", "-n", "-e", "-eq"], "answer": 0},
+{"topic": "Condizioni & Cicli", "diff": "Intermedio", "q": "Quale operatore verifica che un file esista?", "options": ["-e", "-z", "-d", "-gt"], "answer": 0},
+{"topic": "Condizioni & Cicli", "diff": "Base", "q": "Quale operatore logico rappresenta l'AND in Bash?", "options": ["&&", "||", "!", "|"], "answer": 0},
+{"topic": "Condizioni & Cicli", "diff": "Base", "q": "Quale operatore logico rappresenta l'OR in Bash?", "options": ["||", "&&", "&", "!"], "answer": 0},
+{"topic": "Condizioni & Cicli", "diff": "Intermedio", "q": "Nelle condizioni, perche sono importanti gli spazi dentro le parentesi quadre?", "options": ["Perche Bash richiede spazio dopo la parentesi aperta e prima di quella chiusa, altrimenti va in errore", "Perche senza spazi il ciclo diventa piu veloce", "Perche gli spazi eliminano i commenti", "Perche altrimenti la variabile diventa globale"], "answer": 0},
+{"topic": "Scripting", "diff": "Base", "q": "Quale parola chiave introduce un ciclo for?", "options": ["for", "loop", "each", "repeat"], "answer": 0},
+{"topic": "Scripting", "diff": "Base", "q": "Come si chiude un blocco for, while o until?", "options": ["done", "fi", "esac", "end"], "answer": 0},
+{"topic": "Scripting", "diff": "Intermedio", "q": "Qual e la differenza tra while e until?", "options": ["while ripete finche la condizione e vera, until ripete fino a quando diventa vera", "until ripete finche la condizione e vera, while fino a quando diventa vera", "Sono identici e intercambiabili", "until esegue il blocco una sola volta"], "answer": 0},
+{"topic": "Scripting", "diff": "Intermedio", "q": "Cosa fa l'istruzione continue dentro un ciclo?", "options": ["Salta il resto dell'iterazione corrente e passa alla successiva", "Interrompe definitivamente il ciclo", "Riavvia lo script da capo", "Chiude il blocco con done"], "answer": 0},
+{"topic": "Scripting", "diff": "Intermedio", "q": "Cosa fa l'istruzione break dentro un ciclo?", "options": ["Interrompe definitivamente il ciclo", "Salta solo l'iterazione corrente", "Passa al ciclo successivo dello script", "Restituisce un codice di errore"], "answer": 0},
+{"topic": "Scripting", "diff": "Intermedio", "q": "Per quale motivo un ciclo while puo diventare infinito?", "options": ["Perche la condizione non cambia mai e resta sempre vera", "Perche manca la parola done", "Perche non si usa fi", "Perche Bash non supporta while"], "answer": 0},
+{"topic": "Scripting", "diff": "Intermedio", "q": "Cosa permette di fare la riga for name in *.sh; do echo $name; done?", "options": ["Scorrere e stampare tutti i file .sh della cartella corrente", "Copiare tutti i file .sh in un'altra cartella", "Cancellare tutti i file .sh", "Sommare le dimensioni dei file .sh"], "answer": 0},
+{"topic": "Funzioni", "diff": "Base", "q": "Come si definisce una funzione in Bash?", "options": ["nome_funzione() { ... }", "def nome_funzione() { ... }", "function: nome_funzione { ... }", "nome_funzione[] { ... }"], "answer": 0},
+{"topic": "Funzioni", "diff": "Base", "q": "Come si accede al primo parametro ricevuto da una funzione?", "options": ["$1", "$0", "$@", "#1"], "answer": 0},
+{"topic": "Funzioni", "diff": "Intermedio", "q": "Cosa succede quando si definisce una funzione ma non la si richiama?", "options": ["Non viene eseguito nulla del suo codice", "Il codice viene eseguito una volta automaticamente", "Bash restituisce un errore di sintassi", "La funzione diventa globale"], "answer": 0},
+{"topic": "Funzioni", "diff": "Intermedio", "q": "Come si restituisce un valore da una funzione?", "options": ["Con la parola chiave return", "Con il comando echo obbligatoriamente", "Con la parola chiave exit", "Con la parola chiave fi"], "answer": 0},
+{"topic": "Funzioni", "diff": "Avanzato", "q": "Una variabile dichiarata dentro una funzione e visibile all'esterno?", "options": ["No, e locale al corpo della funzione", "Si, sempre in tutto lo script", "Solo se il suo valore e pari", "Solo se si usa return"], "answer": 0},
+{"topic": "Funzioni", "diff": "Intermedio", "q": "A cosa serve la parola chiave local?", "options": ["A dichiarare una variabile di ambito solo interno alla funzione", "A rendere globale una variabile", "A restituire un valore dalla funzione", "A importare un file esterno"], "answer": 0},
+{"topic": "Gestione Errori", "diff": "Base", "q": "Cosa contiene la variabile speciale $? dopo l'esecuzione di un comando?", "options": ["Il codice di uscita dell'ultimo comando eseguito", "Il primo parametro passato allo script", "Il PID del processo corrente", "Il numero di righe dello script"], "answer": 0},
+{"topic": "Gestione Errori", "diff": "Base", "q": "Quale codice di uscita indica che un comando e andato a buon fine?", "options": ["0", "1", "-1", "255"], "answer": 0},
+{"topic": "Gestione Errori", "diff": "Intermedio", "q": "Cosa esegue l'espressione cp file.txt curso/ || echo errore?", "options": ["Esegue echo solo se la copia fallisce", "Esegue echo solo se la copia riesce", "Esegue la copia due volte", "Ignora comunque l'errore della copia"], "answer": 0},
+{"topic": "Gestione Errori", "diff": "Intermedio", "q": "Cosa esegue l'espressione cp script.sh curso/ && echo OK?", "options": ["Esegue echo solo se la copia riesce", "Esegue echo solo se la copia fallisce", "Esegue la copia in background", "Termina lo script con exit 1"], "answer": 0},
+{"topic": "Gestione Errori", "diff": "Intermedio", "q": "Cosa fa il comando exit 1 in uno script?", "options": ["Termina lo script restituendo il codice di errore 1", "Riavvia lo script dall'inizio", "Ignora l'ultimo errore", "Esce solo dal ciclo in corso"], "answer": 0},
+{"topic": "Gestione Errori", "diff": "Avanzato", "q": "Come si controlla in modo compatto se l'ultimo comando e fallito?", "options": ["Usando [ $? -ne 0 ] oppure l'operatore ||", "Usando [ $? -eq 0 ] oppure l'operatore &&", "Usando la parola chiave fi", "Usando il comando case"], "answer": 0},
+{"topic": "Gestione Errori", "diff": "Intermedio", "q": "Quale affermazione sui codici di uscita di Bash e corretta?", "options": ["Zero indica successo, un valore diverso da zero indica errore", "Zero indica errore, uno indica successo", "Tutti i valori non zero indicano successo", "Bash non fornisce codici di uscita"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Base", "q": "Che cos'è il demone cron?", "options": ["Un processo sempre attivo in background che esegue attività pianificate automaticamente", "Un editor di testo per modificare la crontab", "Un comando per comprimere le cartelle", "Un filesystem speciale usato per i backup"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Base", "q": "Quale comando elenca i Cron Jobs dell'utente corrente?", "options": ["crontab -l", "crontab -e", "crontab -r", "crontab -x"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Base", "q": "Quale comando apre la crontab in modifica?", "options": ["crontab -e", "crontab -l", "crontab -r", "crontab -n"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Base", "q": "Quale comando rimuove tutti i Cron Jobs dell'utente?", "options": ["crontab -r", "crontab -d", "crontab -e", "crontab --delete"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Base", "q": "Che cosa succede se si esegue il comando crontab senza alcuna opzione?", "options": ["Non fa nulla: serve sempre un modificatore come -l, -e o -r", "Elenca automaticamente tutte le attività", "Cancella tutte le attività pianificate", "Apre subito l'editor predefinito"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Base", "q": "Quanti campi ha una riga di cron prima del comando?", "options": ["5", "3", "4", "6"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Base", "q": "Qual è l'ordine corretto dei cinque campi di una riga di cron?", "options": ["minuto, ora, giorno del mese, mese, giorno della settimana", "ora, minuto, mese, giorno, anno", "secondo, minuto, ora, giorno, mese", "giorno, mese, anno, ora, minuto"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Base", "q": "Quale intervallo di valori accetta il campo dei minuti?", "options": ["0-59", "1-60", "0-60", "1-59"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Base", "q": "Quale intervallo di valori accetta il campo delle ore?", "options": ["0-23", "1-24", "0-24", "1-23"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Base", "q": "Nel campo giorno della settimana, che cosa rappresenta il valore 0?", "options": ["Domenica", "Lunedì", "Sabato", "Qualsiasi giorno"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Base", "q": "Quale range copre il campo giorno della settimana?", "options": ["0-6", "1-7", "0-7", "1-5"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Base", "q": "A che cosa serve la crontab di sistema?", "options": ["A definire attività globali valide per tutto il sistema, spesso visibili in /etc/crontab", "A comprimere automaticamente le cartelle degli utenti", "A memorizzare la cronologia dei comandi", "A elencare gli utenti connessi"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Intermedio", "q": "Che cosa significa la programmazione */5 * * * *?", "options": ["Esegue il comando ogni 5 minuti", "Esegue il comando alle 5 di ogni ora", "Esegue il comando 5 volte al giorno", "Esegue il comando il 5 di ogni mese"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Intermedio", "q": "Che cosa significa 30 2 * * *?", "options": ["Esegue il comando tutti i giorni alle 02:30", "Esegue il comando ogni 2 ore al minuto 30", "Esegue il comando il 30 di ogni mese alle 02:00", "Esegue il comando ogni 30 minuti dalle 02:00"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Intermedio", "q": "Che cosa significa 0 9 * * 1?", "options": ["Esegue il comando ogni lunedì alle 09:00", "Esegue il comando ogni giorno alle 09:01", "Esegue il comando il 9 di ogni mese", "Esegue il comando ogni ora al minuto 1"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Intermedio", "q": "Che cosa significa 0 0 1 * *?", "options": ["Esegue il comando a mezzanotte del primo giorno di ogni mese", "Esegue il comando ogni primo lunedì del mese", "Esegue il comando ogni giorno alle 00:01", "Esegue il comando una volta all'anno, il 1 gennaio"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Intermedio", "q": "Come si indica una lista di valori in un campo di cron?", "options": ["Separandoli con la virgola, per esempio 1,3,5", "Separandoli con il segno più, per esempio 1+3+5", "Separandoli con un punto, per esempio 1.3.5", "Separandoli con il doppio due punti, per esempio 1::3"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Intermedio", "q": "Come si indica un intervallo di valori in un campo di cron?", "options": ["Con il trattino, per esempio 1-5", "Con il segno di uguale, per esempio 1=5", "Con i due punti, per esempio 1:5", "Con le parentesi, per esempio (1 5)"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Intermedio", "q": "Che cosa significa 1-5 nel campo giorno della settimana?", "options": ["Dal lunedì al venerdì", "Da domenica a giovedì", "Solo il giorno 5 del mese", "Ogni 5 giorni"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Intermedio", "q": "Che cosa significa l'asterisco * in un campo di cron?", "options": ["Qualsiasi valore per quel campo", "Il valore zero per quel campo", "Nessun valore, il campo viene ignorato", "Un valore compreso tra 0 e 1"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Avanzato", "q": "Che cosa fa la riga */5 * * * * echo \"ciao\" >> log.txt?", "options": ["Aggiunge \"ciao\" al file log.txt ogni 5 minuti", "Crea il file log.txt una sola volta", "Esegue echo ogni giorno alle 05:00", "Sovrascrive log.txt ogni 5 ore"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Avanzato", "q": "Perché nella crontab conviene usare sempre percorsi assoluti?", "options": ["Perché cron gira a livello di sistema e non eredita la cartella corrente", "Perché in Linux i percorsi relativi non esistono", "Perché cron è più veloce con i percorsi assoluti", "Perché cron accetta solo percorsi che iniziano con la tilde"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Avanzato", "q": "Come si catturano in un log sia l'output sia gli errori di un Cron Job?", "options": ["Con >> file.log 2>&1", "Con < file.log 1>&2", "Con > file.log 0>&1", "Con | file.log 2>&2"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Avanzato", "q": "Dove si trovano di norma le crontab di sistema?", "options": ["In /etc/crontab", "In /home/crontab", "In /bin/crontab", "In /var/users/cron"], "answer": 0},
+{"topic": "Cron Jobs", "diff": "Avanzato", "q": "Perché su un server cron è più utile che sul PC personale?", "options": ["Perché il server è acceso 24 ore su 24, mentre spegnendo il PC la pianificazione si ferma", "Perché cron funziona solo sui server", "Perché sul PC locale cron non è installabile", "Perché i server non hanno bisogno di regole di tempo"], "answer": 0},
+{"topic": "Warp", "diff": "Base", "q": "Secondo i suoi creatori, che cos'è Warp?", "options": ["Non solo una terminale, ma un ambiente di sviluppo con intelligenza artificiale", "Solo un editor di testo senza terminale", "Un filesystem distribuito", "Un linguaggio di scripting"], "answer": 0},
+{"topic": "Warp", "diff": "Base", "q": "A che cosa servono i blocchi di output di Warp?", "options": ["Raggruppano ogni comando e il suo output, con contesto, e si possono copiare, filtrare o condividere", "Nascondono l'output della terminale", "Comprimono i file del progetto", "Pianificano i comandi come cron"], "answer": 0},
+{"topic": "Warp", "diff": "Intermedio", "q": "In Warp, come si chiede all'IA un comando concreto senza avviare l'agente?", "options": ["Iniziando la riga con il simbolo #", "Iniziando la riga con il punto interrogativo ?", "Premendo la combinazione Ctrl+X", "Scrivendo la parola help"], "answer": 0},
+{"topic": "Warp", "diff": "Intermedio", "q": "Che cosa raccoglie Warp Drive?", "options": ["MCP Servers, regole, workflow, prompt, notebook e variabili d'ambiente", "Solo i temi grafici della terminale", "I log di sistema del computer", "Le crontab di tutti gli utenti"], "answer": 0},
+{"topic": "Warp", "diff": "Intermedio", "q": "Che cosa sono i workflow in Warp?", "options": ["Template di comandi con variabili, riutilizzabili con pochi clic", "Backup automatici pianificati come cron", "Plugin per la shell Zsh", "Query SQL salvate nel database"], "answer": 0},
+{"topic": "Warp", "diff": "Intermedio", "q": "Come si passa tra modalità terminale e modalità agente in Warp?", "options": ["Con Ctrl+I (o Cmd+I a seconda del sistema)", "Con Ctrl+Alt+Canc", "Con il comando cron -a", "Con la barra spaziatrice"], "answer": 0},
+{"topic": "Warp", "diff": "Intermedio", "q": "Quale modalità di Warp è attiva per impostazione predefinita?", "options": ["La modalità Auto, che si attiva con il tasto Esc", "La modalità Agente", "La modalità Comando", "La modalità Cron"], "answer": 0},
+{"topic": "Warp", "diff": "Intermedio", "q": "A che cosa serve indicizzare (indexing) un progetto in Warp?", "options": ["A dare all'IA il contesto dell'intero codice per rispondere e lavorare meglio", "A comprimere il progetto in un archivio", "A eseguire automaticamente i test ogni notte", "A pubblicare il progetto online"], "answer": 0},
+{"topic": "Warp", "diff": "Avanzato", "q": "Che cos'è un MCP in Warp?", "options": ["Una linea di comunicazione diretta tra l'agente e un sistema esterno, per esempio un database", "Un tipo di workflow per i commit Git", "Un alias per i comandi più usati", "Un modello di intelligenza artificiale di Warp"], "answer": 0},
+{"topic": "Warp", "diff": "Avanzato", "q": "A cosa servono le regole (rules) in Warp?", "options": ["A definire il comportamento dell'agente, con buone pratiche e contesto del progetto", "A limitare l'uso della CPU della terminale", "A pianificare i comandi come cron", "A cambiare i font della terminale"], "answer": 0},
+{"topic": "Zsh", "diff": "Base", "q": "Che cos'è Zsh rispetto a Bash?", "options": ["Una shell più moderna che mantiene le funzionalità di Bash e ne aggiunge altre", "Un editor di testo alternativo a vim", "Un linguaggio compilato per i server", "Un demone per pianificare attività"], "answer": 0},
+{"topic": "Zsh", "diff": "Base", "q": "Quale comando cambia la shell predefinita dell'utente in Zsh?", "options": ["chsh -s $(which zsh)", "chsh -l zsh", "zsh --default", "set-shell zsh"], "answer": 0},
+{"topic": "Zsh", "diff": "Base", "q": "Quale comando mostra la shell attualmente in uso?", "options": ["echo $SHELL", "whoami", "echo $HOME", "ps zsh"], "answer": 0},
+{"topic": "Zsh", "diff": "Intermedio", "q": "Quale NON è una caratteristica tipica di Zsh?", "options": ["La gestione nativa delle crontab di sistema", "L'autocompletamento più intelligente", "I suggerimenti in tempo reale", "Il supporto a temi e plugin"], "answer": 0},
+{"topic": "Zsh", "diff": "Intermedio", "q": "Quale framework è comunemente associato a Zsh per temi e plugin?", "options": ["Oh My Zsh", "NPM", "Docker", "Warp Drive"], "answer": 0},
+{"topic": "Zsh", "diff": "Intermedio", "q": "Quale file elenca le shell valide installate nel sistema?", "options": ["/etc/shells", "/etc/crontab", "/etc/passwd/shells", "/bin/shells"], "answer": 0},
+{"topic": "Prossimi passi", "diff": "Base", "q": "Qual è il passo logico consigliato dopo aver imparato Bash?", "options": ["Passare a Zsh e continuare a esercitarsi ogni giorno", "Abbandonare la terminale", "Imparare a memoria ogni singolo comando", "Tornare a usare solo l'interfaccia grafica"], "answer": 0},
+{"topic": "Prossimi passi", "diff": "Base", "q": "Dove si trovano i tutorial approfonditi su Warp?", "options": ["Nella Warp University, nella sezione risorse", "Nei log di sistema", "Dentro la crontab", "Nel file /etc/warp"], "answer": 0},
+{"topic": "Prossimi passi", "diff": "Base", "q": "Che cosa offre il piano gratuito di Warp?", "options": ["Un accesso gratuito con un limite di richieste all'IA", "Nessuna funzione, solo la terminale di sistema", "Solo una licenza di prova di un giorno", "Tutte le funzioni senza alcun limite"], "answer": 0},
+{"topic": "Prossimi passi", "diff": "Intermedio", "q": "Qual è il messaggio chiave del corso sulla memorizzazione dei comandi?", "options": ["Non serve ricordare ogni comando o opzione: conta capire i fondamenti e praticare", "Bisogna memorizzare tutti i comandi a memoria", "Ogni comando va scritto solo una volta", "La teoria vale più della pratica"], "answer": 0}
+];
+
+let quizState = null;
+function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+}
+const FALLBACK_CMDS = ['ls -l','pwd','cd ..','cat file.txt','grep errore log.txt','mkdir cartella','rm -r cartella','chmod +x script.sh','whoami','wc -l file.txt','head -n 3 file.txt','echo $HOME'];
+
+function materialQuestions() {
+    const cmdPool = [];
+    state.materials.forEach(m => (m.cmds || []).forEach(c => { if (c.cmd) cmdPool.push(c.cmd); }));
+    if (!cmdPool.length) return [];
+    const firstTok = (s) => String(s).trim().split(/\s+/)[0];
+    const qs = [];
+    state.materials.forEach(m => {
+        (m.cmds || []).forEach(c => {
+            const correct = (c.cmd || '').trim();
+            if (!correct) return;
+            const correctTok = firstTok(correct);
+            const pool = [...new Set(cmdPool.concat(FALLBACK_CMDS))]
+                .filter(x => normalizeCmd(x) !== normalizeCmd(correct));
+            // Preferisci distrattori con un comando diverso (evita "chmod +x a" vs "chmod +x b")
+            const strict = shuffle(pool.filter(x => firstTok(x) !== correctTok));
+            let distract = strict.slice(0, 3);
+            if (distract.length < 3) {
+                const loose = shuffle(pool.filter(x => !distract.includes(x)));
+                distract = distract.concat(loose.slice(0, 3 - distract.length));
+            }
+            const opts = shuffle([correct, ...distract.slice(0, 3)]);
+            qs.push({
+                topic: 'Miei appunti',
+                diff: m.diff || 'Intermedio',
+                q: c.desc ? `Quale comando serve per: ${c.desc}?` : `Quale comando corrisponde al tuo appunto «${m.title}»?`,
+                options: opts,
+                answer: opts.indexOf(correct)
+            });
+        });
+    });
+    return qs;
+}
+function collectQuizQuestions(o) {
+    let list = QUIZ_BANK.slice();
+    if (o.includeMaterial) list = list.concat(materialQuestions());
+    if (o.topic && o.topic !== 'any') list = list.filter(q => q.topic === o.topic);
+    if (o.diff && o.diff !== 'any') list = list.filter(q => q.diff === o.diff);
+    return list;
+}
+function prepareQuestion(q) {
+    const opts = q.options.map((text, i) => ({ text, correct: i === q.answer }));
+    shuffle(opts);
+    return { topic: q.topic, diff: q.diff, q: q.q, options: opts.map(o => o.text), answer: opts.findIndex(o => o.correct) };
+}
+function initQuizTopics() {
+    const sel = document.getElementById('quiz-topic');
+    const topics = [...new Set(QUIZ_BANK.map(q => q.topic))];
+    let opts = '<option value="any">Qualsiasi argomento</option>';
+    if (state.materials.some(m => (m.cmds || []).length)) opts += '<option value="Miei appunti">Miei appunti</option>';
+    opts += topics.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+    sel.innerHTML = opts;
+    updateQuizPoolInfo();
+}
+function updateQuizPoolInfo() {
+    const el = document.getElementById('quiz-pool-info');
+    if (!el) return;
+    const n = collectQuizQuestions({ topic:'any', diff:'any', includeMaterial: document.getElementById('quiz-include-material').checked }).length;
+    el.innerText = `${n} domande disponibili`;
+}
+function startQuiz() {
+    const topic = document.getElementById('quiz-topic').value;
+    const diff = document.getElementById('quiz-diff').value;
+    const includeMaterial = document.getElementById('quiz-include-material').checked;
+    const count = parseInt(document.getElementById('quiz-count').value, 10) || 0;
+    let pool = collectQuizQuestions({ topic, diff, includeMaterial }).map(prepareQuestion);
+    if (!pool.length) { flash('Nessuna domanda con questi filtri'); return; }
+    shuffle(pool);
+    if (count > 0) pool = pool.slice(0, count);
+    quizState = { questions: pool, index: 0, score: 0, answered: false, topic };
+    document.getElementById('quiz-setup').classList.add('hidden');
+    document.getElementById('quiz-result').classList.add('hidden');
+    document.getElementById('quiz-history-wrap').classList.add('hidden');
+    document.getElementById('quiz-run').classList.remove('hidden');
+    renderQuizQuestion();
+}
+function renderQuizQuestion() {
+    const st = quizState, q = st.questions[st.index];
+    st.answered = false;
+    document.getElementById('quiz-progress-label').innerText = `Domanda ${st.index + 1} di ${st.questions.length}`;
+    document.getElementById('quiz-live-score').innerText = `${st.score} punti`;
+    document.getElementById('quiz-progress-bar').style.width = ((st.index) / st.questions.length * 100) + '%';
+    document.getElementById('quiz-q-topic').innerText = q.topic;
+    document.getElementById('quiz-q-diff').innerText = q.diff;
+    document.getElementById('quiz-q-text').innerText = q.q;
+    const optCls = 'quiz-opt w-full text-left px-4 py-3 rounded-xl border border-slate-800 bg-slate-900 hover:border-emerald-500/50 text-sm text-slate-200 transition-all flex items-center gap-3';
+    document.getElementById('quiz-options').innerHTML = q.options.map((o, i) => `
+        <button onclick="answerQuiz(${i})" class="${optCls}">
+            <span class="w-6 h-6 rounded-lg bg-slate-800 text-slate-400 text-xs font-bold flex items-center justify-center shrink-0">${String.fromCharCode(65 + i)}</span>
+            <span class="font-code">${escapeHtml(o)}</span>
+        </button>`).join('');
+    const fb = document.getElementById('quiz-feedback');
+    fb.className = 'hidden text-sm rounded-xl p-3 border';
+    document.getElementById('quiz-next-btn').classList.add('hidden');
+    document.getElementById('quiz-next-btn').innerHTML = st.index === st.questions.length - 1
+        ? 'Vedi risultato <i class="fa-solid fa-flag-checkered ml-1"></i>'
+        : 'Prossima <i class="fa-solid fa-arrow-right ml-1"></i>';
+}
+function answerQuiz(i) {
+    const st = quizState;
+    if (!st || st.answered) return;
+    st.answered = true;
+    const q = st.questions[st.index];
+    document.querySelectorAll('#quiz-options .quiz-opt').forEach((b, idx) => {
+        b.classList.add('pointer-events-none');
+        if (idx === q.answer) b.className = 'quiz-opt w-full text-left px-4 py-3 rounded-xl border border-emerald-500/50 bg-emerald-500/10 text-sm text-emerald-200 transition-all flex items-center gap-3 pointer-events-none';
+        else if (idx === i) b.className = 'quiz-opt w-full text-left px-4 py-3 rounded-xl border border-rose-500/50 bg-rose-500/10 text-sm text-rose-200 transition-all flex items-center gap-3 pointer-events-none';
+        else b.classList.add('opacity-40');
+    });
+    const correct = i === q.answer;
+    if (correct) st.score++;
+    document.getElementById('quiz-live-score').innerText = `${st.score} punti`;
+    const fb = document.getElementById('quiz-feedback');
+    fb.className = correct
+        ? 'text-sm rounded-xl p-3 border border-emerald-500/40 bg-emerald-500/10 text-emerald-200'
+        : 'text-sm rounded-xl p-3 border border-rose-500/40 bg-rose-500/10 text-rose-200';
+    fb.innerHTML = correct
+        ? '<i class="fa-solid fa-circle-check mr-1"></i> Corretto!'
+        : `<i class="fa-solid fa-circle-xmark mr-1"></i> Sbagliato. La risposta corretta è <span class="font-code font-semibold">${escapeHtml(q.options[q.answer])}</span>`;
+    document.getElementById('quiz-next-btn').classList.remove('hidden');
+}
+function quizNext() {
+    const st = quizState;
+    if (!st) return;
+    st.index++;
+    if (st.index >= st.questions.length) finishQuiz();
+    else renderQuizQuestion();
+}
+function finishQuiz() {
+    const st = quizState;
+    const percent = Math.round(st.score / st.questions.length * 100);
+    document.getElementById('quiz-run').classList.add('hidden');
+    const res = document.getElementById('quiz-result');
+    res.classList.remove('hidden'); void res.offsetWidth; res.classList.add('fade-in');
+    document.getElementById('quiz-result-score').innerText = percent + '%';
+    document.getElementById('quiz-result-detail').innerText = `${st.score} risposte corrette su ${st.questions.length}`;
+    let icon = '🏁', title = 'Quiz completato!';
+    if (percent === 100) { icon = '🏆'; title = 'Punteggio perfetto!'; }
+    else if (percent >= 70) { icon = '🎉'; title = 'Ottimo lavoro!'; }
+    else if (percent >= 40) { icon = '👍'; title = 'Buon inizio!'; }
+    else { icon = '📚'; title = 'Ripassa e riprova!'; }
+    document.getElementById('quiz-result-icon').innerText = icon;
+    document.getElementById('quiz-result-title').innerText = title;
+    state.quiz.plays = (state.quiz.plays || 0) + 1;
+    if (percent > (state.quiz.best || 0)) state.quiz.best = percent;
+    state.quiz.history.unshift({
+        date: new Date().toLocaleString('it-IT'),
+        score: st.score, total: st.questions.length, percent, topic: st.topic
+    });
+    state.quiz.history = state.quiz.history.slice(0, 10);
+    persist();
+    renderQuizHeader();
+    renderQuizHistory();
+    quizState = null;
+}
+function abortQuiz() { quizState = null; quizSetup(); }
+function quizSetup() {
+    document.getElementById('quiz-run').classList.add('hidden');
+    document.getElementById('quiz-result').classList.add('hidden');
+    document.getElementById('quiz-setup').classList.remove('hidden');
+    renderQuizHistory();
+}
+function renderQuizHeader() {
+    document.getElementById('quiz-best').innerText = (state.quiz.best || 0) + '%';
+    document.getElementById('quiz-plays').innerText = state.quiz.plays || 0;
+}
+function renderQuizHistory() {
+    const wrap = document.getElementById('quiz-history-wrap');
+    const box = document.getElementById('quiz-history');
+    if (!state.quiz.history.length) { wrap.classList.add('hidden'); return; }
+    wrap.classList.remove('hidden');
+    box.innerHTML = state.quiz.history.map(h => `
+        <div class="flex items-center justify-between bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs">
+            <span class="text-slate-400">${escapeHtml(h.date)}${h.topic && h.topic !== 'any' ? ' · ' + escapeHtml(h.topic) : ''}</span>
+            <span class="${h.percent >= 70 ? 'text-emerald-400' : h.percent >= 40 ? 'text-amber-400' : 'text-rose-400'} font-semibold">${h.score}/${h.total} (${h.percent}%)</span>
+        </div>`).join('');
+}
+
+/* =====================================================================
+   SEZIONE 6 — MATERIALE DI STUDIO PERSONALE
+   ===================================================================== */
+function materialId() { return 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function parseCmds(text) {
+    return String(text || '').split('\n').map(l => l.trim()).filter(Boolean).map(l => {
+        const idx = l.indexOf('|');
+        if (idx === -1) return { cmd: l.trim(), desc: '' };
+        return { cmd: l.slice(0, idx).trim(), desc: l.slice(idx + 1).trim() };
+    }).filter(c => c.cmd);
+}
+function saveMaterial() {
+    const title = document.getElementById('mat-title').value.trim();
+    if (!title) { flash('Inserisci almeno un titolo'); return; }
+    const id = document.getElementById('mat-id').value;
+    const data = {
+        title,
+        cat: document.getElementById('mat-cat').value,
+        diff: document.getElementById('mat-diff').value,
+        content: document.getElementById('mat-content').value.trim(),
+        cmds: parseCmds(document.getElementById('mat-cmds').value)
+    };
+    if (id) {
+        const m = state.materials.find(x => x.id === id);
+        if (m) Object.assign(m, data);
+    } else {
+        state.materials.push(Object.assign({ id: materialId(), at: Date.now() }, data));
+    }
+    persist();
+    clearMaterialForm();
+    afterMaterialChange();
+    flash(id ? 'Materiale aggiornato!' : 'Materiale aggiunto!');
+}
+function afterMaterialChange() {
+    buildCustomChallenges();
+    renderMaterialList();
+    renderTheory();
+    renderChallengeList();
+    loadChallenge();
+    initQuizTopics();
+}
+function editMaterial(id) {
+    const m = state.materials.find(x => x.id === id);
+    if (!m) return;
+    document.getElementById('mat-id').value = m.id;
+    document.getElementById('mat-title').value = m.title;
+    document.getElementById('mat-cat').value = m.cat || 'material';
+    document.getElementById('mat-diff').value = m.diff || 'Intermedio';
+    document.getElementById('mat-content').value = m.content || '';
+    document.getElementById('mat-cmds').value = (m.cmds || []).map(c => c.desc ? c.cmd + ' | ' + c.desc : c.cmd).join('\n');
+    document.getElementById('mat-form-title').innerText = 'Modifica materiale';
+    document.getElementById('mat-submit-label').innerText = 'Salva modifiche';
+    document.getElementById('tab-material').scrollIntoView({ behavior: 'smooth' });
+}
+function clearMaterialForm() {
+    ['mat-id', 'mat-title', 'mat-content', 'mat-cmds'].forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('mat-cat').value = 'material';
+    document.getElementById('mat-diff').value = 'Intermedio';
+    document.getElementById('mat-form-title').innerText = 'Nuovo materiale';
+    document.getElementById('mat-submit-label').innerText = 'Aggiungi materiale';
+}
+function deleteMaterial(id) {
+    if (!confirm('Eliminare questo materiale? Verranno rimossi anche gli esercizi generati da esso.')) return;
+    state.materials = state.materials.filter(x => x.id !== id);
+    persist();
+    afterMaterialChange();
+}
+function renderMaterialList() {
+    const box = document.getElementById('material-list');
+    const empty = document.getElementById('material-empty');
+    const stat = document.getElementById('mat-stat');
+    const totalCmds = state.materials.reduce((s, m) => s + ((m.cmds || []).length), 0);
+    if (stat) stat.innerText = `${state.materials.length} appunti · ${totalCmds} comandi`;
+    if (!state.materials.length) { box.innerHTML = ''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+    box.innerHTML = state.materials.map(m => `
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+            <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                    <h4 class="text-sm font-semibold text-white truncate">${escapeHtml(m.title)}</h4>
+                    <div class="flex flex-wrap gap-1.5 mt-1.5">
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">${escapeHtml(m.diff || 'Intermedio')}</span>
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">${(m.cmds || []).length} comandi</span>
+                    </div>
+                </div>
+                <div class="flex gap-2 shrink-0">
+                    <button onclick="editMaterial('${m.id}')" class="text-slate-400 hover:text-emerald-400 text-xs" title="Modifica"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="deleteMaterial('${m.id}')" class="text-slate-400 hover:text-rose-400 text-xs" title="Elimina"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </div>
+            ${m.content ? `<p class="text-xs text-slate-400 mt-3 whitespace-pre-wrap line-clamp-3">${escapeHtml(m.content)}</p>` : ''}
+            ${(m.cmds || []).length ? `<div class="mt-3 bg-terminal border border-slate-800 rounded-lg p-2 font-code text-[11px] text-emerald-300 space-y-0.5 max-h-24 overflow-y-auto">${(m.cmds || []).map(c => `<div>${escapeHtml(c.cmd)}${c.desc ? ' <span class="text-slate-500">→ ' + escapeHtml(c.desc) + '</span>' : ''}</div>`).join('')}</div>` : ''}
+        </div>`).join('');
+}
+function exportMaterials() {
+    if (!state.materials.length) { flash('Nessun materiale da esportare'); return; }
+    const blob = new Blob([JSON.stringify(state.materials, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'bashmaster_appunti.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+}
+function importMaterials(ev) {
+    const file = ev.target.files && ev.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+        try {
+            const arr = JSON.parse(reader.result);
+            if (!Array.isArray(arr)) throw new Error('non è un array');
+            let added = 0;
+            arr.forEach(m => {
+                if (!m || !m.title) return;
+                state.materials.push({
+                    id: materialId(),
+                    title: String(m.title),
+                    cat: m.cat || 'material',
+                    diff: m.diff || 'Intermedio',
+                    content: m.content || '',
+                    cmds: Array.isArray(m.cmds) ? m.cmds.filter(c => c && c.cmd) : parseCmds(m.cmds || ''),
+                    at: Date.now()
+                });
+                added++;
+            });
+            persist();
+            afterMaterialChange();
+            flash(added + ' appunti importati');
+        } catch (e) { flash('File JSON non valido'); }
+    };
+    reader.readAsText(file);
+    ev.target.value = '';
+}
+
+/* =====================================================================
+   INIT
+   ===================================================================== */
+function init() {
+    buildCustomChallenges();
+    renderTheory();
+    renderMaterialList();
+    initQuizTopics();
+    renderQuizHeader();
+    renderQuizHistory();
+    renderChallengeList();
+    renderSavedScripts();
+    refreshProgress();
+    generateScript();
+    initExerciseFilters();
+    loadChallenge();
+
+    const inc = document.getElementById('quiz-include-material');
+    if (inc) inc.addEventListener('change', updateQuizPoolInfo);
+
+    print('<span class="text-slate-400">Benvenuto nella Palestra Bash! Il file system è simulato ma realistico.</span>');
+    print('<span class="text-slate-500">Prova: <span class="text-emerald-400">ls -la</span>, <span class="text-emerald-400">pwd</span>, <span class="text-emerald-400">cat readme.md</span>, <span class="text-emerald-400">cd documenti</span>, <span class="text-emerald-400">help</span></span>');
+    updatePrompt();
+
+    const valid = ['theory', 'arena', 'quiz', 'generator', 'exercises', 'material'];
+    switchTab(valid.includes(state.lastTab) ? state.lastTab : 'theory');
+}
+init();</script>
+</body>
+</html>
